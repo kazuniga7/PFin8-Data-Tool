@@ -268,43 +268,78 @@ def get_valid_chart_types(analysis_type, view_mode, environment):
 # ==============================================================================
 # CHART GENERATION
 # ==============================================================================
-def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None, category_orders=None):
+def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None,
+                 category_orders=None, group_label="group", hover_mode="binary"):
     fig = None
     try:
+        label_map = {"x": x_label, "percentage": y_label, "group": group_label}
+
         if chart_type == "Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
                 color=color_col, barmode="group",
-                title=title, labels={"x": x_label, "percentage": y_label},
+                title=title, labels=label_map,
                 category_orders=category_orders,
             )
         elif chart_type == "Grouped Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
                 color=color_col, barmode="group",
-                title=title, labels={"x": x_label, "percentage": y_label},
+                title=title, labels=label_map,
                 category_orders=category_orders,
             )
         elif chart_type == "Stacked Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
                 color=color_col, barmode="stack",
-                title=title, labels={"x": x_label, "percentage": y_label},
+                title=title, labels=label_map,
                 category_orders=category_orders,
             )
         elif chart_type == "Line Chart":
             fig = px.line(
                 chart_data, x="x", y="percentage",
                 color=color_col, markers=True,
-                title=title, labels={"x": x_label, "percentage": y_label},
+                title=title, labels=label_map,
                 category_orders=category_orders,
             )
 
         if fig:
+            # Custom hover templates based on mode
+            if hover_mode == "cat3":
+                cat3_hover_labels = {
+                    "Correct": "% Correct",
+                    "Incorrect": "% Incorrect",
+                    "Don't Know": "% Don't Know",
+                }
+                for trace in fig.data:
+                    cat_name = trace.name
+                    pct_label = cat3_hover_labels.get(cat_name, "% of Respondents")
+                    trace.hovertemplate = (
+                        f"{x_label}: %{{x}}<br>"
+                        f"{pct_label}: %{{y:.1f}}%<br>"
+                        f"<extra>{cat_name}</extra>"
+                    )
+            elif hover_mode == "total_correct":
+                for trace in fig.data:
+                    trace.hovertemplate = (
+                        f"{x_label}: %{{x}}<br>"
+                        f"% of Respondents: %{{y:.1f}}%<br>"
+                        f"{group_label}: {trace.name}<br>"
+                        f"<extra></extra>"
+                    )
+            else:  # binary
+                for trace in fig.data:
+                    trace.hovertemplate = (
+                        f"{x_label}: %{{x}}<br>"
+                        f"% Correct: %{{y:.1f}}%<br>"
+                        f"{group_label}: {trace.name}<br>"
+                        f"<extra></extra>"
+                    )
+
             fig.update_layout(
                 yaxis_title=y_label,
                 xaxis_title=x_label,
-                legend_title_text=color_col if color_col else "",
+                legend_title_text=group_label if color_col == "group" else (color_col if color_col else ""),
                 template="plotly_white",
                 font=dict(size=12),
                 title_font=dict(size=16),
@@ -643,7 +678,7 @@ def run_analysis(config, df_years, df_genpop):
     chart_data = None
     color_col = "group"
     x_label = ""
-    y_label = "Weighted % of Respondents"
+    hover_mode = "binary"
 
     if analysis_type == "Topic Bucket":
         selected_topics = config["selected_topics"]
@@ -654,6 +689,8 @@ def run_analysis(config, df_years, df_genpop):
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_binary_data(df, topics_map, group_col, group_label)
             x_label = "Topic"
+            y_label = "% Correct"
+            hover_mode = "binary"
             title = f"P-Fin 8: % Correct by {group_label}"
         else:
             topics_map = {k: v for k, v in TOPIC_CAT3_NAMES.items() if k in selected_topics}
@@ -662,11 +699,15 @@ def run_analysis(config, df_years, df_genpop):
             if "category" not in category_orders:
                 category_orders["category"] = ["Correct", "Incorrect", "Don't Know"]
             x_label = f"Topic by {group_label}"
+            y_label = "% of Respondents"
+            hover_mode = "cat3"
             title = f"P-Fin 8: Response Distribution by {group_label}"
     else:
         selected_range = config["selected_range"]
         chart_data = prepare_total_correct_data(df, group_col, score_range=selected_range)
         x_label = "Total Correct"
+        y_label = "% of Respondents"
+        hover_mode = "total_correct"
         title = f"P-Fin 8: Distribution of Total Correct by {group_label}"
         # Ensure score order
         if not chart_data.empty:
@@ -681,7 +722,8 @@ def run_analysis(config, df_years, df_genpop):
         return None, None, None
 
     # Create chart
-    fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col, category_orders)
+    fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
+                       category_orders, group_label=group_label, hover_mode=hover_mode)
 
     # Generate note
     note = generate_note(
