@@ -267,17 +267,20 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
     valid = []
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
-            valid = ["Grouped Bar Chart"]
-            # Stacked is valid only when legend represents parts of a whole
+            valid = ["Grouped Bar Chart", "Horizontal Bar Chart"]
+            # Stacked and pie valid only when legend represents parts of a whole
             if axis_legend == "Response Category":
                 valid.append("Stacked Bar Chart")
+                valid.append("Pie Chart")
         else:
-            valid = ["Grouped Bar Chart", "Bar Chart", "Line Chart"]
+            valid = ["Grouped Bar Chart", "Bar Chart", "Horizontal Bar Chart", "Line Chart"]
     else:  # Total Correct
-        valid = ["Bar Chart", "Grouped Bar Chart", "Line Chart"]
-        # Stacked is valid only when Total Correct scores are in the legend
+        valid = ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
+        # Stacked and pie valid only when Total Correct scores are in the legend
         if axis_legend == "Total Correct":
             valid.append("Stacked Bar Chart")
+            valid.append("Pie Chart")
+    valid.append("Table")
     return valid
 
 
@@ -323,6 +326,16 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
+        elif chart_type == "Horizontal Bar Chart":
+            fig = px.bar(
+                chart_data, x="percentage", y="x",
+                color=color_col, barmode="group",
+                orientation="h",
+                title=title, labels=label_map,
+                category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
+                **facet_args,
+            )
         elif chart_type == "Stacked Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
@@ -332,6 +345,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
+        elif chart_type == "Pie Chart":
+            fig = px.pie(
+                chart_data, values="percentage", names=color_col,
+                title=title, labels=label_map,
+                color_discrete_sequence=streamlit_colors,
+                facet_col="x" if chart_data["x"].nunique() > 1 else None,
+                facet_col_wrap=4 if chart_data["x"].nunique() > 1 else None,
+            )
+            fig.update_traces(textposition="inside", textinfo="percent+label")
         elif chart_type == "Line Chart":
             fig = px.line(
                 chart_data, x="x", y="percentage",
@@ -343,48 +365,99 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             )
 
         if fig:
-            # Custom hover templates based on mode
-            if hover_mode == "cat3":
-                cat3_hover_labels = {
-                    "Correct": "% Correct",
-                    "Incorrect": "% Incorrect",
-                    "Don't Know": "% Don't Know",
-                }
-                for trace in fig.data:
-                    cat_name = trace.name
-                    pct_label = cat3_hover_labels.get(cat_name, "% of Respondents")
-                    trace.hovertemplate = (
-                        f"{x_label}: %{{x}}<br>"
-                        f"{pct_label}: %{{y:.1f}}%<br>"
-                        f"<extra></extra>"
-                    )
-            elif hover_mode == "total_correct":
-                for trace in fig.data:
-                    trace.hovertemplate = (
-                        f"{x_label}: %{{x}}<br>"
-                        f"% of Respondents: %{{y:.1f}}%<br>"
-                        f"{group_label}: {trace.name}<br>"
-                        f"<extra></extra>"
-                    )
-            else:  # binary
-                for trace in fig.data:
-                    trace.hovertemplate = (
-                        f"{x_label}: %{{x}}<br>"
-                        f"% Correct: %{{y:.1f}}%<br>"
-                        f"{group_label}: {trace.name}<br>"
-                        f"<extra></extra>"
-                    )
+            # Custom hover templates based on mode (skip for pie charts)
+            if chart_type != "Pie Chart":
+                if hover_mode == "cat3":
+                    cat3_hover_labels = {
+                        "Correct": "% Correct",
+                        "Incorrect": "% Incorrect",
+                        "Don't Know": "% Don't Know",
+                    }
+                    for trace in fig.data:
+                        cat_name = trace.name
+                        pct_label = cat3_hover_labels.get(cat_name, "% of Respondents")
+                        if chart_type == "Horizontal Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{y}}<br>"
+                                f"{pct_label}: %{{x:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                        else:
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"{pct_label}: %{{y:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                elif hover_mode == "total_correct":
+                    for trace in fig.data:
+                        if chart_type == "Horizontal Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{y}}<br>"
+                                f"% of Respondents: %{{x:.1f}}%<br>"
+                                f"{group_label}: {trace.name}<br>"
+                                f"<extra></extra>"
+                            )
+                        else:
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% of Respondents: %{{y:.1f}}%<br>"
+                                f"{group_label}: {trace.name}<br>"
+                                f"<extra></extra>"
+                            )
+                else:  # binary
+                    for trace in fig.data:
+                        if chart_type == "Horizontal Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{y}}<br>"
+                                f"% Correct: %{{x:.1f}}%<br>"
+                                f"{group_label}: {trace.name}<br>"
+                                f"<extra></extra>"
+                            )
+                        else:
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% Correct: %{{y:.1f}}%<br>"
+                                f"{group_label}: {trace.name}<br>"
+                                f"<extra></extra>"
+                            )
 
-            fig.update_layout(
-                yaxis_title=y_label,
-                xaxis_title=x_label,
-                legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
-                template="plotly_white",
-                font=dict(size=12),
-                title_font=dict(size=16),
-                height=800 if facet_col else 500,
-            )
-            fig.update_yaxes(range=[0, 105])
+            # Layout adjustments
+            if chart_type == "Pie Chart":
+                n_x = chart_data["x"].nunique()
+                pie_height = 400 if n_x <= 1 else 400 * ((n_x + 3) // 4)
+                fig.update_layout(
+                    legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
+                    template="plotly_white",
+                    font=dict(size=12),
+                    title_font=dict(size=16),
+                    height=pie_height,
+                )
+                # Clean up facet titles
+                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+            elif chart_type == "Horizontal Bar Chart":
+                fig.update_layout(
+                    yaxis_title=x_label,
+                    xaxis_title=y_label,
+                    legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
+                    template="plotly_white",
+                    font=dict(size=12),
+                    title_font=dict(size=16),
+                    height=800 if facet_col else 500,
+                )
+                fig.update_xaxes(range=[0, 105])
+                if facet_col:
+                    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+            else:
+                fig.update_layout(
+                    yaxis_title=y_label,
+                    xaxis_title=x_label,
+                    legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
+                    template="plotly_white",
+                    font=dict(size=12),
+                    title_font=dict(size=16),
+                    height=800 if facet_col else 500,
+                )
+                fig.update_yaxes(range=[0, 105])
 
             # Cap bar width when there are 4 or fewer x-axis categories
             # Only for stacked bars — use bargap to add space around bars
@@ -783,7 +856,7 @@ def run_analysis(config, df_years, df_genpop):
             age_config = config["custom_age_range"]
             if age_config and age_config.get("errors"):
                 st.error("Invalid groups — please adjust ranges")
-                return None, None, None
+                return None, None, None, None, None
 
             groups = age_config["groups"]
             labels = age_config["labels"]
@@ -834,7 +907,7 @@ def run_analysis(config, df_years, df_genpop):
     # Check if data remains after filtering
     if len(df) == 0:
         st.warning("No data available for the selected filters. Please adjust your selections.")
-        return None, None, None
+        return None, None, None, None, None
 
     # Determine category orders for the group column
     cat_order = get_category_order(group_col)
@@ -873,7 +946,7 @@ def run_analysis(config, df_years, df_genpop):
     if analysis_type == "Topic Bucket":
         selected_topics = config["selected_topics"]
         if not selected_topics:
-            return None, None, None
+            return None, None, None, None, None
 
         if view_mode and "Binary" in view_mode:
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
@@ -946,7 +1019,7 @@ def run_analysis(config, df_years, df_genpop):
 
     if chart_data is None or chart_data.empty:
         st.warning("No data available for the selected combination. Please adjust your filters.")
-        return None, None, None
+        return None, None, None, None, None
 
     # Set legend label
     legend_label_text = None
@@ -961,10 +1034,12 @@ def run_analysis(config, df_years, df_genpop):
     else:
         legend_label_text = group_label
 
-    # Create chart
-    fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
-                       category_orders, group_label=legend_label_text, hover_mode=hover_mode,
-                       legend_label=legend_label_text, facet_col=use_facet)
+    # Create chart or table
+    fig = None
+    if chart_type != "Table":
+        fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
+                           category_orders, group_label=legend_label_text, hover_mode=hover_mode,
+                           legend_label=legend_label_text, facet_col=use_facet)
 
     # Generate note
     note = generate_note(
@@ -983,7 +1058,7 @@ def run_analysis(config, df_years, df_genpop):
     # Run sanity checks
     checks = run_sanity_checks(df, "survey_weight", chart_data, environment, analysis_col)
 
-    return fig, note, checks
+    return fig, note, checks, chart_data, title
 
 
 # ==============================================================================
@@ -1112,10 +1187,53 @@ def main():
     st.markdown("---")
 
     # Run analysis
-    fig, note, checks = run_analysis(config, df_years, df_genpop)
+    fig, note, checks, chart_data, chart_title = run_analysis(config, df_years, df_genpop)
 
-    # Display chart
-    if fig:
+    # Display chart or table
+    if config["chart_type"] == "Table" and chart_data is not None and not chart_data.empty:
+        st.markdown(f"### {chart_title}")
+
+        # Build a clean display table
+        display_cols = [c for c in chart_data.columns if c not in ["n", "score"]]
+        display_df = chart_data[display_cols].copy()
+        display_df["percentage"] = display_df["percentage"].round(2)
+
+        # Rename columns for display
+        col_renames = {
+            "x": config.get("axis_x", ""),
+            "percentage": "% of Respondents",
+            "group_value": config.get("group_dim_label", "Group"),
+            "topic": "Topic",
+            "response_category": "Response Category",
+            "score_label": "Total Correct",
+        }
+        display_df = display_df.rename(columns={k: v for k, v in col_renames.items() if k in display_df.columns})
+
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+        # Display sample size warnings inline
+        if checks and checks["warnings"]:
+            for warning in checks["warnings"]:
+                st.caption(warning)
+
+        # Display note
+        if note:
+            st.markdown("---")
+            st.caption(note)
+
+        # Debug panel
+        render_debug_panel(checks)
+
+        # Export as CSV
+        st.markdown("---")
+        st.download_button(
+            label="📥 Download Table as CSV",
+            data=display_df.to_csv(index=False),
+            file_name="pfin8_table.csv",
+            mime="text/csv",
+        )
+
+    elif fig:
         st.plotly_chart(fig, use_container_width=True)
 
         # Display sample size warnings inline
