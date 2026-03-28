@@ -560,11 +560,77 @@ def render_sidebar(df_years, df_genpop):
             if analysis_variable == "Age (Custom Range)":
                 min_age = int(df_genpop["reported_age"].min())
                 max_age = int(df_genpop["reported_age"].max())
-                custom_age_range = st.slider(
-                    "Custom Age Range",
-                    min_value=min_age, max_value=max_age,
-                    value=(min_age, max_age),
+                st.caption(f"Min age: {min_age} · Max age: {max_age}")
+
+                num_groups = st.selectbox(
+                    "Number of age groups",
+                    [1, 2, 3, 4, 5, 6, 7, 8],
+                    index=2,
                 )
+
+                st.markdown("**Define your age groups**")
+                custom_age_groups = []
+                age_errors = []
+
+                for i in range(num_groups):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        start = st.number_input(
+                            f"Group {i+1} start",
+                            min_value=min_age, max_value=max_age,
+                            value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
+                            key=f"age_start_{i}",
+                        )
+                    with col2:
+                        default_end = min(min_age + (i + 1) * ((max_age - min_age) // num_groups) - 1, max_age)
+                        if i == num_groups - 1:
+                            default_end = max_age
+                        end = st.number_input(
+                            f"Group {i+1} end",
+                            min_value=min_age, max_value=max_age,
+                            value=default_end,
+                            key=f"age_end_{i}",
+                        )
+
+                    # Validate: end must be >= start
+                    if end < start:
+                        st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
+                        age_errors.append(f"Group {i+1}: end < start")
+
+                    custom_age_groups.append((start, end))
+
+                # Validate: check for overlaps
+                for i in range(len(custom_age_groups)):
+                    for j in range(i + 1, len(custom_age_groups)):
+                        g1_start, g1_end = custom_age_groups[i]
+                        g2_start, g2_end = custom_age_groups[j]
+                        if g1_start <= g2_end and g2_start <= g1_end:
+                            overlap_start = max(g1_start, g2_start)
+                            overlap_end = min(g1_end, g2_end)
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
+                            age_errors.append(f"Groups {i+1} and {j+1} overlap")
+
+                if age_errors:
+                    st.error("Invalid groups — please adjust ranges")
+
+                # Build labels
+                custom_age_labels = []
+                for i, (s, e) in enumerate(custom_age_groups):
+                    if i == len(custom_age_groups) - 1 and e == max_age:
+                        custom_age_labels.append(f"{s}+")
+                    else:
+                        custom_age_labels.append(f"{s}-{e}")
+
+                # Preview
+                if not age_errors:
+                    preview = " · ".join([f"Group {i+1}: {lbl}" for i, lbl in enumerate(custom_age_labels)])
+                    st.caption(f"Preview: {preview}")
+
+                custom_age_range = {
+                    "groups": custom_age_groups,
+                    "labels": custom_age_labels,
+                    "errors": age_errors,
+                }
             elif analysis_variable == "Dependent Children Under 18":
                 subgroups = st.multiselect(
                     "Select Groups",
@@ -695,18 +761,29 @@ def run_analysis(config, df_years, df_genpop):
         dataset_name = "PFin2026_GenPop (2026)"
 
         if config["analysis_variable"] == "Age (Custom Range)":
-            age_range = config["custom_age_range"]
-            if age_range:
-                df = df[(df["reported_age"] >= age_range[0]) & (df["reported_age"] <= age_range[1])]
-            # Create age bins for the custom range
-            df["custom_age_group"] = pd.cut(
-                df["reported_age"],
-                bins=min(5, age_range[1] - age_range[0] + 1) if age_range else 5,
-                precision=0,
-            ).astype(str)
+            age_config = config["custom_age_range"]
+            if age_config and age_config.get("errors"):
+                st.error("Invalid groups — please adjust ranges")
+                return None, None, None
+
+            groups = age_config["groups"]
+            labels = age_config["labels"]
+
+            # Assign each respondent to a group based on their age
+            def assign_age_group(age):
+                for i, (start, end) in enumerate(groups):
+                    if start <= age <= end:
+                        return labels[i]
+                return None  # Age not in any group
+
+            df["custom_age_group"] = df["reported_age"].apply(assign_age_group)
+            df = df.dropna(subset=["custom_age_group"])
+
             group_col = "custom_age_group"
             group_label = "Age Range"
             analysis_col = "custom_age_group"
+
+            # Set category order to match the label order (used later via config)
         elif config["analysis_variable"] == "Dependent Children Under 18":
             df["has_dependent_children_display"] = df["has_dependent_children"].map(BINARY_DISPLAY)
             group_col = "has_dependent_children_display"
@@ -743,7 +820,10 @@ def run_analysis(config, df_years, df_genpop):
     # Determine category orders for the group column
     cat_order = get_category_order(group_col)
     category_orders = {}
-    if cat_order:
+    if group_col == "custom_age_group" and config.get("custom_age_range"):
+        # Use the user-defined label order for custom age groups
+        category_orders["group_value"] = config["custom_age_range"]["labels"]
+    elif cat_order:
         available = [v for v in cat_order if v in df[group_col].unique()]
         category_orders["group_value"] = [str(v) for v in available]
     if environment == "Over the Years":
