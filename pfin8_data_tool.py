@@ -269,10 +269,12 @@ def get_valid_chart_types(analysis_type, view_mode, environment):
 # CHART GENERATION
 # ==============================================================================
 def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None,
-                 category_orders=None, group_label="group", hover_mode="binary"):
+                 category_orders=None, group_label="group", hover_mode="binary",
+                 legend_label=None, facet_col=None):
     fig = None
     try:
         label_map = {"x": x_label, "percentage": y_label, "group": group_label}
+        facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
         if chart_type == "Bar Chart":
             fig = px.bar(
@@ -280,6 +282,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, barmode="group",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                **facet_args,
             )
         elif chart_type == "Grouped Bar Chart":
             fig = px.bar(
@@ -287,6 +290,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, barmode="group",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                **facet_args,
             )
         elif chart_type == "Stacked Bar Chart":
             fig = px.bar(
@@ -294,6 +298,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, barmode="stack",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                **facet_args,
             )
         elif chart_type == "Line Chart":
             fig = px.line(
@@ -301,6 +306,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, markers=True,
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                **facet_args,
             )
 
         if fig:
@@ -339,13 +345,17 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             fig.update_layout(
                 yaxis_title=y_label,
                 xaxis_title=x_label,
-                legend_title_text=group_label if color_col == "group" else (color_col if color_col else ""),
+                legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
                 template="plotly_white",
                 font=dict(size=12),
                 title_font=dict(size=16),
-                height=500,
+                height=800 if facet_col else 500,
             )
             fig.update_yaxes(range=[0, 105])
+
+            # Clean up facet subplot titles (remove "topic=" prefix)
+            if facet_col:
+                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
         return None
@@ -410,7 +420,7 @@ def prepare_topic_cat3_data(df, topics, group_col, group_label, weight_col="surv
             cat3_data = weighted_percentage_cat3(group_df, cat3_col, weight_col)
             for _, row in cat3_data.iterrows():
                 rows.append({
-                    "x": f"{topic_name} ({group_val})",
+                    "x": str(group_val),
                     "topic": topic_name,
                     "percentage": row["percentage"],
                     "category": row["category"],
@@ -679,6 +689,7 @@ def run_analysis(config, df_years, df_genpop):
     color_col = "group"
     x_label = ""
     hover_mode = "binary"
+    use_facet = None
 
     if analysis_type == "Topic Bucket":
         selected_topics = config["selected_topics"]
@@ -698,9 +709,10 @@ def run_analysis(config, df_years, df_genpop):
             color_col = "category"
             if "category" not in category_orders:
                 category_orders["category"] = ["Correct", "Incorrect", "Don't Know"]
-            x_label = f"Topic by {group_label}"
+            x_label = group_label
             y_label = "% of Respondents"
             hover_mode = "cat3"
+            use_facet = "topic"
             title = f"P-Fin 8: Response Distribution by {group_label}"
     else:
         selected_range = config["selected_range"]
@@ -722,8 +734,10 @@ def run_analysis(config, df_years, df_genpop):
         return None, None, None
 
     # Create chart
+    legend_label = "Response" if environment == "Financial Well-Being" else None
     fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
-                       category_orders, group_label=group_label, hover_mode=hover_mode)
+                       category_orders, group_label=group_label, hover_mode=hover_mode,
+                       legend_label=legend_label, facet_col=use_facet)
 
     # Generate note
     note = generate_note(
