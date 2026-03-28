@@ -1193,22 +1193,69 @@ def main():
     if config["chart_type"] == "Table" and chart_data is not None and not chart_data.empty:
         st.markdown(f"### {chart_title}")
 
-        # Build a clean display table — drop 'x' since it's a copy of another column
-        display_cols = [c for c in chart_data.columns if c not in ["n", "score", "x"]]
-        display_df = chart_data[display_cols].copy()
-        display_df["percentage"] = display_df["percentage"].round(2)
+        # Build a pivoted display table
+        # Rows = what's on x-axis, Columns = what's in legend
+        axis_x = config.get("axis_x", "")
+        axis_legend = config.get("axis_legend", "")
+        analysis_type = config.get("analysis_type", "")
+        view_mode = config.get("view_mode", "")
 
-        # Rename columns for display
-        col_renames = {
-            "percentage": "% of Respondents",
-            "group_value": config.get("group_dim_label", "Group"),
-            "topic": "Topic",
-            "response_category": "Response Category",
-            "score_label": "Total Correct",
-        }
-        display_df = display_df.rename(columns={k: v for k, v in col_renames.items() if k in display_df.columns})
+        # Map axis selections to data column names
+        def axis_to_col(axis_name):
+            if axis_name == "Topic":
+                return "topic"
+            elif axis_name == "Total Correct":
+                return "score_label"
+            elif axis_name == "Response Category":
+                return "response_category"
+            else:
+                return "group_value"
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        row_col = axis_to_col(axis_x)
+        col_col = axis_to_col(axis_legend)
+
+        # For 3-category with facet, we need to handle the third dimension
+        axis_facet = config.get("axis_facet")
+        facet_col_name = axis_to_col(axis_facet) if axis_facet else None
+
+        chart_data["percentage"] = chart_data["percentage"].round(2)
+
+        # Get response counts per row group
+        n_counts = chart_data.groupby(row_col)["n"].first()
+
+        if facet_col_name:
+            # 3 dimensions: pivot with multi-level columns (facet × legend)
+            pivot_df = chart_data.pivot_table(
+                index=row_col, columns=[facet_col_name, col_col],
+                values="percentage", aggfunc="first"
+            )
+            # Flatten multi-level column names
+            pivot_df.columns = [f"{f} — {c}" for f, c in pivot_df.columns]
+        else:
+            # 2 dimensions: simple pivot
+            pivot_df = chart_data.pivot_table(
+                index=row_col, columns=col_col,
+                values="percentage", aggfunc="first"
+            )
+
+        # Add response count column
+        pivot_df["Response Count"] = n_counts
+
+        # Reset index so row variable becomes a column
+        pivot_df = pivot_df.reset_index()
+
+        # Rename the index column for display
+        row_label = axis_x if axis_x in ["Topic", "Total Correct", "Response Category"] else config.get("group_dim_label", "Group")
+        pivot_df = pivot_df.rename(columns={row_col: row_label})
+
+        # Maintain category order if applicable
+        if row_col == "score_label":
+            score_order = [TOTAL_CORRECT_LABELS[i] for i in range(9)]
+            available = [s for s in score_order if s in pivot_df[row_label].values]
+            pivot_df[row_label] = pd.Categorical(pivot_df[row_label], categories=available, ordered=True)
+            pivot_df = pivot_df.sort_values(row_label)
+
+        st.dataframe(pivot_df, use_container_width=True, hide_index=True)
 
         # Display sample size warnings inline
         if checks and checks["warnings"]:
@@ -1227,7 +1274,7 @@ def main():
         st.markdown("---")
         st.download_button(
             label="📥 Download Table as CSV",
-            data=display_df.to_csv(index=False),
+            data=pivot_df.to_csv(index=False),
             file_name="pfin8_table.csv",
             mime="text/csv",
         )
