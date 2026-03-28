@@ -1153,13 +1153,6 @@ def main():
         [data-testid="stButton"] button p {
             font-weight: 800 !important;
         }
-        /* Hide the three-dot column menu in st.dataframe */
-        [data-testid="stDataFrame"] [role="columnheader"] button {
-            display: none !important;
-        }
-        [data-testid="stDataFrame"] .glideHeaderMenuButton {
-            display: none !important;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -1262,7 +1255,8 @@ def main():
             pivot_df[row_label] = pd.Categorical(pivot_df[row_label], categories=available, ordered=True)
             pivot_df = pivot_df.sort_values(row_label)
 
-        st.dataframe(pivot_df, use_container_width=True, hide_index=True)
+        pivot_df = pivot_df.set_index(row_label)
+        st.table(pivot_df)
 
         # Display sample size warnings inline
         if checks and checks["warnings"]:
@@ -1281,7 +1275,7 @@ def main():
         st.markdown("---")
         st.download_button(
             label="📥 Download Table as CSV",
-            data=pivot_df.to_csv(index=False),
+            data=pivot_df.to_csv(index=True),
             file_name="pfin8_table.csv",
             mime="text/csv",
         )
