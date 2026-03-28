@@ -1153,6 +1153,13 @@ def main():
         [data-testid="stButton"] button p {
             font-weight: 800 !important;
         }
+        /* Hide the three-dot column menu in st.dataframe */
+        [data-testid="stDataFrame"] [role="columnheader"] button {
+            display: none !important;
+        }
+        [data-testid="stDataFrame"] .glideHeaderMenuButton {
+            display: none !important;
+        }
         </style>
     """, unsafe_allow_html=True)
 
