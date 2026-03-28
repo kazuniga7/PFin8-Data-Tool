@@ -376,6 +376,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             )
             fig.update_yaxes(range=[0, 105])
 
+            # Cap bar width when there are 4 or fewer x-axis categories
+            # Only for stacked bars (grouped bars handle width automatically)
+            if chart_type == "Stacked Bar Chart":
+                n_x_categories = chart_data["x"].nunique()
+                if n_x_categories <= 4:
+                    fig.update_traces(width=0.5)
+
             # Clean up facet subplot titles (remove "topic=" prefix)
             if facet_col:
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
