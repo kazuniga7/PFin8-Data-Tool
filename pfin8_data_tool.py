@@ -953,7 +953,40 @@ def main():
         "2017 report, and it has since been used each year as a broad measure of financial literacy in "
         "the United States."
     )
-    with st.expander("..."):
+
+    # Custom CSS to make the toggle buttons look like inline text links
+    # Safe to target all stButton because Show more/less are the only st.button calls
+    # (download uses st.download_button which has a different data-testid)
+    st.markdown("""
+        <style>
+        [data-testid="stButton"] button {
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: -10px 0 0 0 !important;
+            color: inherit !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            cursor: pointer !important;
+            box-shadow: none !important;
+            min-height: 0 !important;
+            line-height: 1.5 !important;
+        }
+        [data-testid="stButton"] button:hover {
+            text-decoration: underline !important;
+            color: #1f4e79 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    if "show_full_summary" not in st.session_state:
+        st.session_state.show_full_summary = False
+
+    if not st.session_state.show_full_summary:
+        if st.button("Show more", key="show_more"):
+            st.session_state.show_full_summary = True
+            st.rerun()
+    else:
         st.markdown(
             "The P-Fin measures financial literacy using 28 multiple-choice questions grouped across "
             "eight functional areas of personal finance: earning, consuming, saving, investing, "
@@ -971,6 +1004,9 @@ def main():
             "For further information, visit "
             "[The TIAA Institute-GFLEC](https://gflec.org/initiatives/personal-finance-index/#list)."
         )
+        if st.button("Show less", key="show_less"):
+            st.session_state.show_full_summary = False
+            st.rerun()
     st.markdown("---")
 
     # Run analysis
