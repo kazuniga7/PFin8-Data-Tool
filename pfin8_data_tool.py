@@ -263,18 +263,20 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 # CHART TYPE VALIDATION
 # ==============================================================================
-def get_valid_chart_types(analysis_type, view_mode, environment):
+def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None):
     valid = []
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
-            valid = ["Stacked Bar Chart", "Grouped Bar Chart"]
+            valid = ["Grouped Bar Chart"]
+            # Stacked is valid only when legend represents parts of a whole
+            if axis_legend == "Response Category":
+                valid.append("Stacked Bar Chart")
         else:
             valid = ["Grouped Bar Chart", "Bar Chart", "Line Chart"]
-            if environment == "Over the Years":
-                valid.append("Stacked Bar Chart")
     else:  # Total Correct
         valid = ["Bar Chart", "Grouped Bar Chart", "Line Chart"]
-        if environment != "Over the Years":
+        # Stacked is valid only when Total Correct scores are in the legend
+        if axis_legend == "Total Correct":
             valid.append("Stacked Bar Chart")
     return valid
 
@@ -606,12 +608,6 @@ def render_sidebar(df_years, df_genpop):
 
         st.markdown("---")
 
-        # Chart type selection
-        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment)
-        chart_type = st.selectbox("Chart Type", valid_charts)
-
-        st.markdown("---")
-
         # Axis assignment
         # Determine the group dimension label
         if environment == "Over the Years":
@@ -648,6 +644,12 @@ def render_sidebar(df_years, df_genpop):
             axis_x = st.selectbox("X-Axis", dimensions, index=0)
             axis_legend = [d for d in dimensions if d != axis_x][0]
             st.caption(f"Legend: **{axis_legend}**")
+
+        st.markdown("---")
+
+        # Chart type selection (after axis assignment so stacked bar validity can be checked)
+        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend)
+        chart_type = st.selectbox("Chart Type", valid_charts)
 
         return {
             "environment": environment,
