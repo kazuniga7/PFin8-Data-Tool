@@ -925,7 +925,7 @@ def render_debug_panel(checks):
 def main():
     st.set_page_config(
         page_title="P-Fin 8 Data Exploration Tool",
-        page_icon="📊",
+        page_icon=None,
         layout="wide",
     )
 
@@ -944,8 +944,33 @@ def main():
     config = render_sidebar(df_years, df_genpop)
 
     # Main content
-    st.title("📊 P-Fin 8 Data Exploration Tool")
-    st.markdown("Explore financial literacy trends from the TIAA P-Fin Index.")
+    st.title("P-Fin 8 Data Exploration Tool")
+    st.markdown("**What is the P-Fin?**")
+    st.markdown(
+        "The TIAA Institute–GFLEC Personal Finance Index (P-Fin) is an annual survey of U.S. adults "
+        "designed to measure the knowledge and understanding needed for sound financial decision-making "
+        "and effective management of personal finances. It was first fielded in 2016 for the inaugural "
+        "2017 report, and it has since been used each year as a broad measure of financial literacy in "
+        "the United States."
+    )
+    with st.expander("..."):
+        st.markdown(
+            "The P-Fin measures financial literacy using 28 multiple-choice questions grouped across "
+            "eight functional areas of personal finance: earning, consuming, saving, investing, "
+            "borrowing/managing debt, insuring, comprehending uncertainty, and go-to information sources. "
+            "In this way, the survey does not treat financial literacy as a single narrow concept, but "
+            "rather as a broad set of skills tied to the major areas in which people routinely make "
+            "financial decisions.\n\n"
+            "Researchers recently created a smaller reduced-form financial literacy measure by selecting "
+            "one question from each of the eight topic buckets. This produces an 8-question index, which "
+            "can be referred to as the P-Fin 8. The P-Fin 8 preserves the broad topic coverage of the "
+            "original survey while offering a shorter summary measure of financial literacy.\n\n"
+            "Using this tool, you will be able to explore the P-Fin 8 with visuals in three different "
+            "ways: responses throughout the years, by demographics, and by financial well-being. For each "
+            "environment, you will be able to create visuals of the data for further analysis.\n\n"
+            "For further information, visit "
+            "[The TIAA Institute-GFLEC](https://gflec.org/initiatives/personal-finance-index/#list)."
+        )
     st.markdown("---")
 
     # Run analysis
