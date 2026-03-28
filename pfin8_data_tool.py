@@ -1193,14 +1193,13 @@ def main():
     if config["chart_type"] == "Table" and chart_data is not None and not chart_data.empty:
         st.markdown(f"### {chart_title}")
 
-        # Build a clean display table
-        display_cols = [c for c in chart_data.columns if c not in ["n", "score"]]
+        # Build a clean display table — drop 'x' since it's a copy of another column
+        display_cols = [c for c in chart_data.columns if c not in ["n", "score", "x"]]
         display_df = chart_data[display_cols].copy()
         display_df["percentage"] = display_df["percentage"].round(2)
 
         # Rename columns for display
         col_renames = {
-            "x": config.get("axis_x", ""),
             "percentage": "% of Respondents",
             "group_value": config.get("group_dim_label", "Group"),
             "topic": "Topic",
