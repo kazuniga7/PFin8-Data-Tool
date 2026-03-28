@@ -560,7 +560,6 @@ def render_sidebar(df_years, df_genpop):
             if analysis_variable == "Age (Custom Range)":
                 min_age = int(df_genpop["reported_age"].min())
                 max_age = int(df_genpop["reported_age"].max())
-                st.caption(f"Min age: {min_age} · Max age: {max_age}")
 
                 num_groups = st.selectbox(
                     "Number of age groups",
@@ -569,14 +568,16 @@ def render_sidebar(df_years, df_genpop):
                 )
 
                 st.markdown("**Define your age groups**")
+                st.caption(f"Min age: {min_age} · Max age: {max_age}")
                 custom_age_groups = []
                 age_errors = []
 
                 for i in range(num_groups):
+                    st.markdown(f"**Group {i+1}:**")
                     col1, col2 = st.columns(2)
                     with col1:
                         start = st.number_input(
-                            f"Group {i+1} start",
+                            "Start",
                             min_value=min_age, max_value=max_age,
                             value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
                             key=f"age_start_{i}",
@@ -586,7 +587,7 @@ def render_sidebar(df_years, df_genpop):
                         if i == num_groups - 1:
                             default_end = max_age
                         end = st.number_input(
-                            f"Group {i+1} end",
+                            "End",
                             min_value=min_age, max_value=max_age,
                             value=default_end,
                             key=f"age_end_{i}",
@@ -620,11 +621,6 @@ def render_sidebar(df_years, df_genpop):
                         custom_age_labels.append(f"{s}+")
                     else:
                         custom_age_labels.append(f"{s}-{e}")
-
-                # Preview
-                if not age_errors:
-                    preview = " · ".join([f"Group {i+1}: {lbl}" for i, lbl in enumerate(custom_age_labels)])
-                    st.caption(f"Preview: {preview}")
 
                 custom_age_range = {
                     "groups": custom_age_groups,
