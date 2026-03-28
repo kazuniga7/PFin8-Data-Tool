@@ -377,11 +377,17 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             fig.update_yaxes(range=[0, 105])
 
             # Cap bar width when there are 4 or fewer x-axis categories
-            # Only for stacked bars (grouped bars handle width automatically)
+            # Only for stacked bars — use bargap to add space around bars
             if chart_type == "Stacked Bar Chart":
                 n_x_categories = chart_data["x"].nunique()
-                if n_x_categories <= 4:
-                    fig.update_traces(width=0.5)
+                if n_x_categories == 1:
+                    fig.update_layout(bargap=0.8)
+                elif n_x_categories == 2:
+                    fig.update_layout(bargap=0.7)
+                elif n_x_categories == 3:
+                    fig.update_layout(bargap=0.6)
+                elif n_x_categories == 4:
+                    fig.update_layout(bargap=0.5)
 
             # Clean up facet subplot titles (remove "topic=" prefix)
             if facet_col:
