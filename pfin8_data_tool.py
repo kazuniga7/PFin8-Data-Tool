@@ -965,7 +965,7 @@ def main():
             padding: 0 !important;
             margin: -10px 0 0 0 !important;
             color: inherit !important;
-            font-weight: bold !important;
+            font-weight: 800 !important;
             font-size: 1rem !important;
             cursor: pointer !important;
             box-shadow: none !important;
@@ -975,6 +975,9 @@ def main():
         [data-testid="stButton"] button:hover {
             text-decoration: underline !important;
             color: #1f4e79 !important;
+        }
+        [data-testid="stButton"] button p {
+            font-weight: 800 !important;
         }
         </style>
     """, unsafe_allow_html=True)
