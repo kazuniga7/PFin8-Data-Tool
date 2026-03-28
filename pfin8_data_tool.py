@@ -1256,6 +1256,13 @@ def main():
             pivot_df = pivot_df.sort_values(row_label)
 
         pivot_df = pivot_df.set_index(row_label)
+
+        # Format percentage columns with 2 decimals and % sign, keep Response Count as integer
+        pct_cols = [c for c in pivot_df.columns if c != "Response Count"]
+        pivot_df["Response Count"] = pivot_df["Response Count"].astype(int)
+        for col in pct_cols:
+            pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
+
         st.table(pivot_df)
 
         # Display sample size warnings inline
