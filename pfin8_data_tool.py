@@ -317,7 +317,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     trace.hovertemplate = (
                         f"{x_label}: %{{x}}<br>"
                         f"{pct_label}: %{{y:.1f}}%<br>"
-                        f"<extra>{cat_name}</extra>"
+                        f"<extra></extra>"
                     )
             elif hover_mode == "total_correct":
                 for trace in fig.data:
