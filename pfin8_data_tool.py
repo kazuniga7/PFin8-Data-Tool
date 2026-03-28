@@ -198,14 +198,28 @@ def run_sanity_checks(df, weight_col, result_data, environment, analysis_variabl
                 checks["warnings"].append(warning)
 
     # Check that weighted percentages sum reasonably
-    if "percentage" in result_data.columns and "group" in result_data.columns:
-        for grp_name, grp_data in result_data.groupby("group"):
-            if "category" in grp_data.columns:
-                total = grp_data["percentage"].sum()
-                if abs(total - 100) > 1:
-                    checks["warnings"].append(
-                        f"Percentages for {grp_name} sum to {total:.1f}%, expected ~100%"
-                    )
+    if "percentage" in result_data.columns:
+        group_check_col = None
+        cat_check_col = None
+        for col in ["group_value", "group"]:
+            if col in result_data.columns:
+                group_check_col = col
+                break
+        for col in ["response_category", "category"]:
+            if col in result_data.columns:
+                cat_check_col = col
+                break
+        if group_check_col and cat_check_col:
+            for grp_name, grp_data in result_data.groupby(group_check_col):
+                total = grp_data.groupby(cat_check_col)["percentage"].sum().sum()
+                # Only check if there's a facet (topic) or not
+                if "topic" in result_data.columns:
+                    for topic, topic_data in grp_data.groupby("topic"):
+                        t = topic_data["percentage"].sum()
+                        if abs(t - 100) > 1:
+                            checks["warnings"].append(
+                                f"Percentages for {grp_name}/{topic} sum to {t:.1f}%, expected ~100%"
+                            )
 
     return checks
 
@@ -273,7 +287,14 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                  legend_label=None, facet_col=None):
     fig = None
     try:
-        label_map = {"x": x_label, "percentage": y_label, "group": group_label}
+        label_map = {
+            "x": x_label,
+            "percentage": y_label,
+            "group_value": group_label,
+            "topic": "Topic",
+            "response_category": "Response Category",
+            "score_label": "Total Correct",
+        }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
         if chart_type == "Bar Chart":
@@ -405,9 +426,9 @@ def prepare_topic_binary_data(df, topics, group_col, group_label, weight_col="su
         for topic_name, topic_col in topics.items():
             pct = weighted_percentage_binary(group_df, topic_col, weight_col)
             rows.append({
-                "x": topic_name,
+                "topic": topic_name,
+                "group_value": str(group_val),
                 "percentage": pct,
-                "group": str(group_val),
                 "n": len(group_df.dropna(subset=[topic_col])),
             })
     return pd.DataFrame(rows)
@@ -420,11 +441,10 @@ def prepare_topic_cat3_data(df, topics, group_col, group_label, weight_col="surv
             cat3_data = weighted_percentage_cat3(group_df, cat3_col, weight_col)
             for _, row in cat3_data.iterrows():
                 rows.append({
-                    "x": str(group_val),
                     "topic": topic_name,
+                    "group_value": str(group_val),
                     "percentage": row["percentage"],
-                    "category": row["category"],
-                    "group": str(group_val),
+                    "response_category": row["category"],
                     "n": len(group_df.dropna(subset=[cat3_col])),
                 })
     return pd.DataFrame(rows)
@@ -438,10 +458,10 @@ def prepare_total_correct_data(df, group_col, weight_col="survey_weight", score_
             dist = dist[dist["score"].between(score_range[0], score_range[1])]
         for _, row in dist.iterrows():
             rows.append({
-                "x": row["score_label"],
+                "score_label": row["score_label"],
                 "score": row["score"],
                 "percentage": row["percentage"],
-                "group": str(group_val),
+                "group_value": str(group_val),
                 "n": len(group_df.dropna(subset=["pfin8_totalCorrect"])),
             })
     return pd.DataFrame(rows)
@@ -590,6 +610,45 @@ def render_sidebar(df_years, df_genpop):
         valid_charts = get_valid_chart_types(analysis_type, view_mode, environment)
         chart_type = st.selectbox("Chart Type", valid_charts)
 
+        st.markdown("---")
+
+        # Axis assignment
+        # Determine the group dimension label
+        if environment == "Over the Years":
+            group_dim_label = "Year"
+        elif environment == "Demographics":
+            group_dim_label = analysis_variable if analysis_variable else "Demographic"
+        else:
+            group_dim_label = analysis_variable if analysis_variable else "Financial Well-Being"
+
+        axis_x = None
+        axis_legend = None
+        axis_facet = None
+
+        if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
+            # 3 dimensions: Topic, Group, Response Category
+            dimensions = ["Topic", group_dim_label, "Response Category"]
+            st.markdown("**Axis Assignment**")
+            axis_x = st.selectbox("X-Axis", dimensions, index=1)
+            remaining_for_legend = [d for d in dimensions if d != axis_x]
+            axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
+            axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
+            st.caption(f"Facet (panels): **{axis_facet}**")
+        elif analysis_type == "Topic Bucket":
+            # 2 dimensions: Topic and Group
+            dimensions = ["Topic", group_dim_label]
+            st.markdown("**Axis Assignment**")
+            axis_x = st.selectbox("X-Axis", dimensions, index=0)
+            axis_legend = [d for d in dimensions if d != axis_x][0]
+            st.caption(f"Legend: **{axis_legend}**")
+        else:
+            # 2 dimensions: Total Correct and Group
+            dimensions = ["Total Correct", group_dim_label]
+            st.markdown("**Axis Assignment**")
+            axis_x = st.selectbox("X-Axis", dimensions, index=0)
+            axis_legend = [d for d in dimensions if d != axis_x][0]
+            st.caption(f"Legend: **{axis_legend}**")
+
         return {
             "environment": environment,
             "analysis_type": analysis_type,
@@ -602,6 +661,10 @@ def render_sidebar(df_years, df_genpop):
             "year_range": year_range,
             "custom_age_range": custom_age_range,
             "chart_type": chart_type,
+            "axis_x": axis_x,
+            "axis_legend": axis_legend,
+            "axis_facet": axis_facet,
+            "group_dim_label": group_dim_label,
         }
 
 
@@ -680,16 +743,31 @@ def run_analysis(config, df_years, df_genpop):
     category_orders = {}
     if cat_order:
         available = [v for v in cat_order if v in df[group_col].unique()]
-        category_orders["group"] = available
+        category_orders["group_value"] = [str(v) for v in available]
     if environment == "Over the Years":
-        category_orders["group"] = sorted(df[group_col].unique())
+        category_orders["group_value"] = [str(v) for v in sorted(df[group_col].unique())]
 
     # Build chart data
     chart_data = None
-    color_col = "group"
+    color_col = "group_value"
     x_label = ""
     hover_mode = "binary"
     use_facet = None
+    group_dim_label = config["group_dim_label"]
+    axis_x = config["axis_x"]
+    axis_legend = config["axis_legend"]
+    axis_facet = config.get("axis_facet")
+
+    # Map dimension names to data columns
+    def dim_to_col(dim_name, mode="binary"):
+        if dim_name == "Topic":
+            return "topic"
+        elif dim_name == "Total Correct":
+            return "score_label"
+        elif dim_name == "Response Category":
+            return "response_category"
+        else:  # group dimension
+            return "group_value"
 
     if analysis_type == "Topic Bucket":
         selected_topics = config["selected_topics"]
@@ -699,45 +777,93 @@ def run_analysis(config, df_years, df_genpop):
         if view_mode and "Binary" in view_mode:
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_binary_data(df, topics_map, group_col, group_label)
-            x_label = "Topic"
-            y_label = "% Correct"
             hover_mode = "binary"
-            title = f"P-Fin 8: % Correct by {group_label}"
+            y_label = "% Correct"
+
+            # Assign axes
+            x_col = dim_to_col(axis_x)
+            legend_col = dim_to_col(axis_legend)
+            x_dim_label = axis_x if axis_x == "Topic" else group_label
+            legend_dim_label = axis_legend if axis_legend == "Topic" else group_label
+
+            chart_data["x"] = chart_data[x_col]
+            color_col = legend_col
+            x_label = x_dim_label
+            title = f"P-Fin 8: % Correct — {x_dim_label} × {legend_dim_label}"
+
         else:
             topics_map = {k: v for k, v in TOPIC_CAT3_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_cat3_data(df, topics_map, group_col, group_label)
-            color_col = "category"
-            if "category" not in category_orders:
-                category_orders["category"] = ["Correct", "Incorrect", "Don't Know"]
-            x_label = group_label
-            y_label = "% of Respondents"
             hover_mode = "cat3"
-            use_facet = "topic"
+            y_label = "% of Respondents"
+
+            # Assign axes for 3 dimensions
+            x_col = dim_to_col(axis_x, "cat3")
+            legend_col = dim_to_col(axis_legend, "cat3")
+            facet_dim = axis_facet
+            facet_col = dim_to_col(axis_facet, "cat3") if axis_facet else None
+
+            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else group_label)
+            legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else group_label)
+
+            chart_data["x"] = chart_data[x_col]
+            color_col = legend_col
+            use_facet = facet_col
+            x_label = x_dim_label
             title = f"P-Fin 8: Response Distribution by {group_label}"
+
+            # Set category orders for response_category if used
+            if "response_category" in [x_col, legend_col, facet_col]:
+                category_orders["response_category"] = ["Correct", "Incorrect", "Don't Know"]
+
     else:
         selected_range = config["selected_range"]
         chart_data = prepare_total_correct_data(df, group_col, score_range=selected_range)
-        x_label = "Total Correct"
-        y_label = "% of Respondents"
         hover_mode = "total_correct"
-        title = f"P-Fin 8: Distribution of Total Correct by {group_label}"
+        y_label = "% of Respondents"
+
+        # Assign axes
+        x_col = dim_to_col(axis_x)
+        legend_col = dim_to_col(axis_legend)
+        x_dim_label = "Total Correct" if axis_x == "Total Correct" else group_label
+        legend_dim_label = "Total Correct" if axis_legend == "Total Correct" else group_label
+
+        chart_data["x"] = chart_data[x_col]
+        color_col = legend_col
+        x_label = x_dim_label
+        title = f"P-Fin 8: Distribution of Total Correct — {x_dim_label} × {legend_dim_label}"
+
         # Ensure score order
         if not chart_data.empty:
             score_labels = [TOTAL_CORRECT_LABELS[i] for i in range(
                 selected_range[0] if selected_range else 0,
                 (selected_range[1] if selected_range else 8) + 1
             )]
-            category_orders["x"] = score_labels
+            category_orders["score_label"] = score_labels
+            if x_col == "score_label":
+                category_orders["x"] = score_labels
 
     if chart_data is None or chart_data.empty:
         st.warning("No data available for the selected combination. Please adjust your filters.")
         return None, None, None
 
+    # Set legend label
+    legend_label_text = None
+    if environment == "Financial Well-Being" and legend_col == "group_value":
+        legend_label_text = "Response"
+    elif legend_col == "response_category":
+        legend_label_text = "Response Category"
+    elif legend_col == "topic":
+        legend_label_text = "Topic"
+    elif legend_col == "score_label":
+        legend_label_text = "Total Correct"
+    else:
+        legend_label_text = group_label
+
     # Create chart
-    legend_label = "Response" if environment == "Financial Well-Being" else None
     fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
-                       category_orders, group_label=group_label, hover_mode=hover_mode,
-                       legend_label=legend_label, facet_col=use_facet)
+                       category_orders, group_label=legend_label_text, hover_mode=hover_mode,
+                       legend_label=legend_label_text, facet_col=use_facet)
 
     # Generate note
     note = generate_note(
