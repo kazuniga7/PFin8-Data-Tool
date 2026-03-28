@@ -299,12 +299,19 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
         }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
+        # Explicit color sequence matching Streamlit's default Plotly theme
+        streamlit_colors = [
+            "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
+            "#19D3F0", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
+        ]
+
         if chart_type == "Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
                 color=color_col, barmode="group",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
         elif chart_type == "Grouped Bar Chart":
@@ -313,6 +320,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, barmode="group",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
         elif chart_type == "Stacked Bar Chart":
@@ -321,6 +329,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, barmode="stack",
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
         elif chart_type == "Line Chart":
@@ -329,6 +338,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color=color_col, markers=True,
                 title=title, labels=label_map,
                 category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
 
