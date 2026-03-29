@@ -276,14 +276,18 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
             valid = [bar_option, h_bar_option]
-            if axis_legend == "Response Category":
+            # Stacked and pie are valid when Response Category is in the legend
+            # OR when there's a single group (Response Category is still part of the data)
+            if axis_legend == "Response Category" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
             valid = [bar_option, h_bar_option, "Line Chart"]
     else:  # Total Correct
         valid = [bar_option, h_bar_option, "Line Chart"]
-        if axis_legend == "Total Correct":
+        # Stacked and pie valid when Total Correct is in the legend
+        # OR when there's a single group (score distribution is still parts of whole)
+        if axis_legend == "Total Correct" or n_legend_groups == 1:
             valid.append("Stacked Bar Chart")
             valid.append("Pie Chart")
     valid.append("Table")
@@ -1116,8 +1120,8 @@ def run_analysis(config, df_years, df_genpop):
             # Assign axes
             x_col = dim_to_col(axis_x)
             legend_col = dim_to_col(axis_legend)
-            x_dim_label = axis_x if axis_x == "Topic" else group_label
-            legend_dim_label = axis_legend if axis_legend == "Topic" else group_label
+            x_dim_label = axis_x if axis_x == "Topic" else ("Response" if environment == "Financial Well-Being" else group_label)
+            legend_dim_label = axis_legend if axis_legend == "Topic" else ("Response" if environment == "Financial Well-Being" else group_label)
 
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
@@ -1136,8 +1140,8 @@ def run_analysis(config, df_years, df_genpop):
             facet_dim = axis_facet
             facet_col = dim_to_col(axis_facet, "cat3") if axis_facet else None
 
-            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else group_label)
-            legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else group_label)
+            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
+            legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
 
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
@@ -1158,8 +1162,8 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "Total Correct" if axis_x == "Total Correct" else group_label
-        legend_dim_label = "Total Correct" if axis_legend == "Total Correct" else group_label
+        x_dim_label = "Total Correct" if axis_x == "Total Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
+        legend_dim_label = "Total Correct" if axis_legend == "Total Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
@@ -1290,11 +1294,10 @@ def main():
         "the United States."
     )
 
-    # Custom CSS to make the toggle buttons look like inline text links
-    # Safe to target all stButton because Show more/less are the only st.button calls
-    # (download uses st.download_button which has a different data-testid)
+    # Custom CSS
     st.markdown("""
         <style>
+        /* Show more/less buttons look like text links */
         [data-testid="stButton"] button {
             background: none !important;
             border: none !important;
@@ -1314,6 +1317,41 @@ def main():
         }
         [data-testid="stButton"] button p {
             font-weight: 800 !important;
+        }
+        /* Download buttons styled as blue underlined links */
+        [data-testid="stDownloadButton"] button {
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            color: #1f77b4 !important;
+            text-decoration: underline !important;
+            font-size: 0.9rem !important;
+            cursor: pointer !important;
+            box-shadow: none !important;
+            min-height: 0 !important;
+        }
+        [data-testid="stDownloadButton"] button:hover {
+            color: #1f4e79 !important;
+        }
+        [data-testid="stDownloadButton"] button p {
+            color: #1f77b4 !important;
+            text-decoration: underline !important;
+        }
+        [data-testid="stDownloadButton"] button:hover p {
+            color: #1f4e79 !important;
+        }
+        /* Hide anchor links on headers */
+        h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
+        [data-testid="stMarkdown"] h1 a,
+        [data-testid="stMarkdown"] h2 a,
+        [data-testid="stMarkdown"] h3 a {
+            display: none !important;
+        }
+        .stMainBlockContainer h1 a,
+        .stMainBlockContainer h2 a,
+        .stMainBlockContainer h3 a {
+            display: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -1424,28 +1462,30 @@ def main():
         for col in pct_cols:
             pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
 
-        # Title and download buttons at top
-        title_col, csv_col, xlsx_col = st.columns([6, 1, 1])
+        # Title and export links at top
+        title_col, export_col = st.columns([6, 2])
         with title_col:
             st.markdown(f"### {chart_title}")
-        with csv_col:
-            st.download_button(
-                label="📥 CSV",
-                data=pivot_df.to_csv(index=True),
-                file_name="pfin8_table.csv",
-                mime="text/csv",
-            )
-        with xlsx_col:
+        with export_col:
             from io import BytesIO
             excel_buffer = BytesIO()
             pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
             excel_buffer.seek(0)
-            st.download_button(
-                label="📥 Excel",
-                data=excel_buffer.getvalue(),
-                file_name="pfin8_table.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+            ec1, ec2 = st.columns(2)
+            with ec1:
+                st.download_button(
+                    label="CSV",
+                    data=pivot_df.to_csv(index=True),
+                    file_name="pfin8_table.csv",
+                    mime="text/csv",
+                )
+            with ec2:
+                st.download_button(
+                    label="Excel",
+                    data=excel_buffer.getvalue(),
+                    file_name="pfin8_table.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
 
         st.table(pivot_df)
 
@@ -1463,15 +1503,28 @@ def main():
         render_debug_panel(checks)
 
     elif fig:
-        # Download button at top-right
-        spacer_col, dl_col = st.columns([7, 1])
-        with dl_col:
-            st.download_button(
-                label="📥 HTML",
-                data=fig.to_html(include_plotlyjs="cdn"),
-                file_name="pfin8_chart.html",
-                mime="text/html",
-            )
+        # Export links at top-right
+        spacer_col, export_col = st.columns([6, 2])
+        with export_col:
+            ec1, ec2 = st.columns(2)
+            with ec1:
+                try:
+                    png_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
+                    st.download_button(
+                        label="PNG",
+                        data=png_bytes,
+                        file_name="pfin8_chart.png",
+                        mime="image/png",
+                    )
+                except Exception:
+                    st.caption("PNG unavailable")
+            with ec2:
+                st.download_button(
+                    label="HTML",
+                    data=fig.to_html(include_plotlyjs="cdn"),
+                    file_name="pfin8_chart.html",
+                    mime="text/html",
+                )
 
         st.plotly_chart(fig, use_container_width=True)
 
