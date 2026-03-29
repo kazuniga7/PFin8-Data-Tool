@@ -265,22 +265,24 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1):
     valid = []
-    # Bar Chart and Grouped Bar Chart are mutually exclusive
+    # Bar and Grouped Bar are mutually exclusive based on legend group count
     if n_legend_groups == 1:
         bar_option = "Bar Chart"
+        h_bar_option = "Horizontal Bar Chart"
     else:
         bar_option = "Grouped Bar Chart"
+        h_bar_option = "Horizontal Grouped Bar Chart"
 
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
-            valid = [bar_option, "Horizontal Bar Chart"]
+            valid = [bar_option, h_bar_option]
             if axis_legend == "Response Category":
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
-            valid = [bar_option, "Horizontal Bar Chart", "Line Chart"]
+            valid = [bar_option, h_bar_option, "Line Chart"]
     else:  # Total Correct
-        valid = [bar_option, "Horizontal Bar Chart", "Line Chart"]
+        valid = [bar_option, h_bar_option, "Line Chart"]
         if axis_legend == "Total Correct":
             valid.append("Stacked Bar Chart")
             valid.append("Pie Chart")
@@ -334,6 +336,17 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
         elif chart_type == "Horizontal Bar Chart":
             fig = px.bar(
                 chart_data, x="percentage", y="x",
+                barmode="group",
+                orientation="h",
+                title=title, labels=label_map,
+                category_orders=category_orders,
+                color_discrete_sequence=streamlit_colors,
+                **facet_args,
+            )
+            fig.update_layout(showlegend=False)
+        elif chart_type == "Horizontal Grouped Bar Chart":
+            fig = px.bar(
+                chart_data, x="percentage", y="x",
                 color=color_col, barmode="group",
                 orientation="h",
                 title=title, labels=label_map,
@@ -381,7 +394,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     for trace in fig.data:
                         cat_name = trace.name
                         pct_label = cat3_hover_labels.get(cat_name, "% of Respondents")
-                        if chart_type == "Horizontal Bar Chart":
+                        if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
                                 f"{pct_label}: %{{x:.1f}}%<br>"
@@ -395,13 +408,20 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 elif hover_mode == "total_correct":
                     for trace in fig.data:
-                        if chart_type == "Bar Chart":
-                            trace.hovertemplate = (
-                                f"{x_label}: %{{x}}<br>"
-                                f"% of Respondents: %{{y:.1f}}%<br>"
-                                f"<extra></extra>"
-                            )
-                        elif chart_type == "Horizontal Bar Chart":
+                        if chart_type in ["Bar Chart", "Horizontal Bar Chart"]:
+                            if chart_type == "Horizontal Bar Chart":
+                                trace.hovertemplate = (
+                                    f"{x_label}: %{{y}}<br>"
+                                    f"% of Respondents: %{{x:.1f}}%<br>"
+                                    f"<extra></extra>"
+                                )
+                            else:
+                                trace.hovertemplate = (
+                                    f"{x_label}: %{{x}}<br>"
+                                    f"% of Respondents: %{{y:.1f}}%<br>"
+                                    f"<extra></extra>"
+                                )
+                        elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
                                 f"% of Respondents: %{{x:.1f}}%<br>"
@@ -417,13 +437,20 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 else:  # binary
                     for trace in fig.data:
-                        if chart_type == "Bar Chart":
-                            trace.hovertemplate = (
-                                f"{x_label}: %{{x}}<br>"
-                                f"% Correct: %{{y:.1f}}%<br>"
-                                f"<extra></extra>"
-                            )
-                        elif chart_type == "Horizontal Bar Chart":
+                        if chart_type in ["Bar Chart", "Horizontal Bar Chart"]:
+                            if chart_type == "Horizontal Bar Chart":
+                                trace.hovertemplate = (
+                                    f"{x_label}: %{{y}}<br>"
+                                    f"% Correct: %{{x:.1f}}%<br>"
+                                    f"<extra></extra>"
+                                )
+                            else:
+                                trace.hovertemplate = (
+                                    f"{x_label}: %{{x}}<br>"
+                                    f"% Correct: %{{y:.1f}}%<br>"
+                                    f"<extra></extra>"
+                                )
+                        elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
                                 f"% Correct: %{{x:.1f}}%<br>"
@@ -451,7 +478,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 )
                 # Clean up facet titles
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-            elif chart_type == "Horizontal Bar Chart":
+            elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
                 fig.update_layout(
                     yaxis_title=x_label,
                     xaxis_title=y_label,
