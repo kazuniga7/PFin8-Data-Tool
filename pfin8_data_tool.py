@@ -1463,29 +1463,29 @@ def main():
             pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
 
         # Title and export links at top
-        title_col, export_col = st.columns([6, 2])
+        title_col, b1, p1, b2 = st.columns([40, 2, 0.5, 2])
         with title_col:
             st.markdown(f"### {chart_title}")
-        with export_col:
+        with b1:
+            st.download_button(
+                label="CSV",
+                data=pivot_df.to_csv(index=True),
+                file_name="pfin8_table.csv",
+                mime="text/csv",
+            )
+        with p1:
+            st.markdown("<p style='text-align:center; color:#1f77b4; margin-top:8px;'>|</p>", unsafe_allow_html=True)
+        with b2:
             from io import BytesIO
             excel_buffer = BytesIO()
             pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
             excel_buffer.seek(0)
-            ec1, ec2 = st.columns(2)
-            with ec1:
-                st.download_button(
-                    label="CSV",
-                    data=pivot_df.to_csv(index=True),
-                    file_name="pfin8_table.csv",
-                    mime="text/csv",
-                )
-            with ec2:
-                st.download_button(
-                    label="Excel",
-                    data=excel_buffer.getvalue(),
-                    file_name="pfin8_table.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+            st.download_button(
+                label="Excel",
+                data=excel_buffer.getvalue(),
+                file_name="pfin8_table.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
         st.table(pivot_df)
 
@@ -1503,22 +1503,37 @@ def main():
         render_debug_panel(checks)
 
     elif fig:
+        # Try to generate PNG
+        png_available = False
+        png_bytes = None
+        try:
+            png_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
+            png_available = True
+        except Exception:
+            pass
+
         # Export links at top-right
-        spacer_col, export_col = st.columns([6, 2])
-        with export_col:
-            ec1, ec2 = st.columns(2)
-            with ec1:
-                try:
-                    png_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
-                    st.download_button(
-                        label="PNG",
-                        data=png_bytes,
-                        file_name="pfin8_chart.png",
-                        mime="image/png",
-                    )
-                except Exception:
-                    st.caption("PNG unavailable")
-            with ec2:
+        if png_available:
+            spacer_col, b1, p1, b2 = st.columns([40, 2, 0.5, 2])
+            with b1:
+                st.download_button(
+                    label="PNG",
+                    data=png_bytes,
+                    file_name="pfin8_chart.png",
+                    mime="image/png",
+                )
+            with p1:
+                st.markdown("<p style='text-align:center; color:#1f77b4; margin-top:8px;'>|</p>", unsafe_allow_html=True)
+            with b2:
+                st.download_button(
+                    label="HTML",
+                    data=fig.to_html(include_plotlyjs="cdn"),
+                    file_name="pfin8_chart.html",
+                    mime="text/html",
+                )
+        else:
+            spacer_col, b1 = st.columns([40, 2])
+            with b1:
                 st.download_button(
                     label="HTML",
                     data=fig.to_html(include_plotlyjs="cdn"),
