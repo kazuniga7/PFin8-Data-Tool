@@ -295,7 +295,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
 # ==============================================================================
 def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None,
                  category_orders=None, group_label="group", hover_mode="binary",
-                 legend_label=None, facet_col=None):
+                 legend_label=None, facet_col=None, n_legend_groups=None):
     fig = None
     try:
         label_map = {
@@ -373,16 +373,33 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             )
             fig.update_traces(textposition="inside", textinfo="percent+label")
         elif chart_type == "Line Chart":
-            fig = px.line(
-                chart_data, x="x", y="percentage",
-                color=color_col, markers=True,
-                title=title, labels=label_map,
-                category_orders=category_orders,
-                color_discrete_sequence=streamlit_colors,
-                **facet_args,
-            )
+            # If single group, don't color by legend
+            if n_legend_groups and n_legend_groups <= 1:
+                fig = px.line(
+                    chart_data, x="x", y="percentage",
+                    markers=True,
+                    title=title, labels=label_map,
+                    category_orders=category_orders,
+                    color_discrete_sequence=streamlit_colors,
+                    **facet_args,
+                )
+                fig.update_layout(showlegend=False)
+            else:
+                fig = px.line(
+                    chart_data, x="x", y="percentage",
+                    color=color_col, markers=True,
+                    title=title, labels=label_map,
+                    category_orders=category_orders,
+                    color_discrete_sequence=streamlit_colors,
+                    **facet_args,
+                )
 
         if fig:
+            # Determine if this is a single-group chart (no legend)
+            no_legend_chart = chart_type in ["Bar Chart", "Horizontal Bar Chart"] or (
+                chart_type == "Line Chart" and n_legend_groups and n_legend_groups <= 1
+            )
+
             # Custom hover templates based on mode (skip for pie charts)
             if chart_type != "Pie Chart":
                 if hover_mode == "cat3":
@@ -408,19 +425,18 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 elif hover_mode == "total_correct":
                     for trace in fig.data:
-                        if chart_type in ["Bar Chart", "Horizontal Bar Chart"]:
-                            if chart_type == "Horizontal Bar Chart":
-                                trace.hovertemplate = (
-                                    f"{x_label}: %{{y}}<br>"
-                                    f"% of Respondents: %{{x:.1f}}%<br>"
-                                    f"<extra></extra>"
-                                )
-                            else:
-                                trace.hovertemplate = (
-                                    f"{x_label}: %{{x}}<br>"
-                                    f"% of Respondents: %{{y:.1f}}%<br>"
-                                    f"<extra></extra>"
-                                )
+                        if no_legend_chart and chart_type == "Horizontal Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{y}}<br>"
+                                f"% of Respondents: %{{x:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                        elif no_legend_chart:
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% of Respondents: %{{y:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
                         elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
@@ -437,19 +453,18 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 else:  # binary
                     for trace in fig.data:
-                        if chart_type in ["Bar Chart", "Horizontal Bar Chart"]:
-                            if chart_type == "Horizontal Bar Chart":
-                                trace.hovertemplate = (
-                                    f"{x_label}: %{{y}}<br>"
-                                    f"% Correct: %{{x:.1f}}%<br>"
-                                    f"<extra></extra>"
-                                )
-                            else:
-                                trace.hovertemplate = (
-                                    f"{x_label}: %{{x}}<br>"
-                                    f"% Correct: %{{y:.1f}}%<br>"
-                                    f"<extra></extra>"
-                                )
+                        if no_legend_chart and chart_type == "Horizontal Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{y}}<br>"
+                                f"% Correct: %{{x:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                        elif no_legend_chart:
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% Correct: %{{y:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
                         elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
@@ -808,8 +823,6 @@ def render_sidebar(df_years, df_genpop):
                 default=available_values,
             )
 
-        st.markdown("---")
-
         # Axis assignment
         # Determine the group dimension label
         if environment == "Over the Years":
@@ -837,6 +850,7 @@ def render_sidebar(df_years, df_genpop):
         axis_legend = None
         axis_facet = None
         single_group_value = None  # Track the single group's display value for title
+        axis_assignment_shown = False  # Track if axis dropdowns were displayed
 
         if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
             # 3 dimensions: Topic, Group, Response Category
@@ -848,7 +862,9 @@ def render_sidebar(df_years, df_genpop):
                 axis_x = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
                 remaining = [d for d in dimensions if d != axis_x and d != "Topic"]
+                st.markdown("---")
                 st.markdown("**Axis Assignment**")
+                axis_assignment_shown = True
                 axis_legend = st.selectbox("Legend", remaining, index=0)
                 axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != "Topic"][0] if len(remaining) > 1 else None
                 if not axis_facet:
@@ -863,7 +879,9 @@ def render_sidebar(df_years, df_genpop):
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
                 remaining = [d for d in dimensions if d != axis_x and d != group_dim_label]
+                st.markdown("---")
                 st.markdown("**Axis Assignment**")
+                axis_assignment_shown = True
                 axis_legend = st.selectbox("Legend", remaining, index=0)
                 axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != group_dim_label][0] if len(remaining) > 1 else None
                 if not axis_facet:
@@ -871,7 +889,9 @@ def render_sidebar(df_years, df_genpop):
                 st.caption(f"Facet (panels): **{axis_facet}**")
             else:
                 # Both have multiple values — show full dropdowns
+                st.markdown("---")
                 st.markdown("**Axis Assignment**")
+                axis_assignment_shown = True
                 axis_x = st.selectbox("X-Axis", dimensions, index=1)
                 remaining_for_legend = [d for d in dimensions if d != axis_x]
                 axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
@@ -896,7 +916,9 @@ def render_sidebar(df_years, df_genpop):
                 axis_legend = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
             else:
+                st.markdown("---")
                 st.markdown("**Axis Assignment**")
+                axis_assignment_shown = True
                 dimensions = ["Topic", group_dim_label]
                 axis_x = st.selectbox("X-Axis", dimensions, index=0)
                 axis_legend = [d for d in dimensions if d != axis_x][0]
@@ -919,7 +941,9 @@ def render_sidebar(df_years, df_genpop):
                 axis_x = "Total Correct"
                 axis_legend = group_dim_label
             else:
+                st.markdown("---")
                 st.markdown("**Axis Assignment**")
+                axis_assignment_shown = True
                 dimensions = ["Total Correct", group_dim_label]
                 axis_x = st.selectbox("X-Axis", dimensions, index=0)
                 axis_legend = [d for d in dimensions if d != axis_x][0]
@@ -1172,9 +1196,12 @@ def run_analysis(config, df_years, df_genpop):
     # Create chart or table
     fig = None
     if chart_type != "Table":
+        # Compute n_legend_groups from actual data
+        actual_n_legend_groups = chart_data[color_col].nunique() if color_col in chart_data.columns else 1
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
                            category_orders, group_label=legend_label_text, hover_mode=hover_mode,
-                           legend_label=legend_label_text, facet_col=use_facet)
+                           legend_label=legend_label_text, facet_col=use_facet,
+                           n_legend_groups=actual_n_legend_groups)
 
     # Generate note
     note = generate_note(
@@ -1326,7 +1353,6 @@ def main():
 
     # Display chart or table
     if config["chart_type"] == "Table" and chart_data is not None and not chart_data.empty:
-        st.markdown(f"### {chart_title}")
 
         # Build a pivoted display table
         # Rows = what's on x-axis, Columns = what's in legend
@@ -1398,6 +1424,29 @@ def main():
         for col in pct_cols:
             pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
 
+        # Title and download buttons at top
+        title_col, csv_col, xlsx_col = st.columns([6, 1, 1])
+        with title_col:
+            st.markdown(f"### {chart_title}")
+        with csv_col:
+            st.download_button(
+                label="📥 CSV",
+                data=pivot_df.to_csv(index=True),
+                file_name="pfin8_table.csv",
+                mime="text/csv",
+            )
+        with xlsx_col:
+            from io import BytesIO
+            excel_buffer = BytesIO()
+            pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
+            excel_buffer.seek(0)
+            st.download_button(
+                label="📥 Excel",
+                data=excel_buffer.getvalue(),
+                file_name="pfin8_table.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
         st.table(pivot_df)
 
         # Display sample size warnings inline
@@ -1413,16 +1462,17 @@ def main():
         # Debug panel
         render_debug_panel(checks)
 
-        # Export as CSV
-        st.markdown("---")
-        st.download_button(
-            label="📥 Download Table as CSV",
-            data=pivot_df.to_csv(index=True),
-            file_name="pfin8_table.csv",
-            mime="text/csv",
-        )
-
     elif fig:
+        # Download button at top-right
+        spacer_col, dl_col = st.columns([7, 1])
+        with dl_col:
+            st.download_button(
+                label="📥 HTML",
+                data=fig.to_html(include_plotlyjs="cdn"),
+                file_name="pfin8_chart.html",
+                mime="text/html",
+            )
+
         st.plotly_chart(fig, use_container_width=True)
 
         # Display sample size warnings inline
@@ -1437,15 +1487,6 @@ def main():
 
         # Debug panel
         render_debug_panel(checks)
-
-        # Export option
-        st.markdown("---")
-        st.download_button(
-            label="📥 Download Chart as HTML",
-            data=fig.to_html(include_plotlyjs="cdn"),
-            file_name="pfin8_chart.html",
-            mime="text/html",
-        )
 
 
 if __name__ == "__main__":
