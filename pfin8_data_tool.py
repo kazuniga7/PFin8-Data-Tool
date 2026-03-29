@@ -1318,7 +1318,10 @@ def main():
         [data-testid="stButton"] button p {
             font-weight: 800 !important;
         }
-        /* Download buttons styled as blue underlined links */
+        /* Download buttons styled as blue underlined text */
+        [data-testid="stDownloadButton"] {
+            display: inline-block !important;
+        }
         [data-testid="stDownloadButton"] button {
             background: none !important;
             border: none !important;
@@ -1330,6 +1333,7 @@ def main():
             cursor: pointer !important;
             box-shadow: none !important;
             min-height: 0 !important;
+            line-height: 1.5 !important;
         }
         [data-testid="stDownloadButton"] button:hover {
             color: #1f4e79 !important;
@@ -1337,6 +1341,8 @@ def main():
         [data-testid="stDownloadButton"] button p {
             color: #1f77b4 !important;
             text-decoration: underline !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         [data-testid="stDownloadButton"] button:hover p {
             color: #1f4e79 !important;
@@ -1462,30 +1468,34 @@ def main():
         for col in pct_cols:
             pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
 
-        # Title and export links at top
-        title_col, b1, p1, b2 = st.columns([40, 2, 0.5, 2])
+        # Title and export links
+        title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
-        with b1:
-            st.download_button(
-                label="CSV",
-                data=pivot_df.to_csv(index=True),
-                file_name="pfin8_table.csv",
-                mime="text/csv",
-            )
-        with p1:
-            st.markdown("<p style='text-align:center; color:#1f77b4; margin-top:8px;'>|</p>", unsafe_allow_html=True)
-        with b2:
+        with dl_col:
             from io import BytesIO
             excel_buffer = BytesIO()
             pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
             excel_buffer.seek(0)
-            st.download_button(
-                label="Excel",
-                data=excel_buffer.getvalue(),
-                file_name="pfin8_table.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+            lbl, dc1, dc2, dc3 = st.columns([1.5, 1, 0.3, 1])
+            with lbl:
+                st.markdown("<p style='color:#1f77b4; margin:0; padding:8px 0 0 0; font-size:0.9rem;'>Download:</p>", unsafe_allow_html=True)
+            with dc1:
+                st.download_button(
+                    label="CSV",
+                    data=pivot_df.to_csv(index=True),
+                    file_name="pfin8_table.csv",
+                    mime="text/csv",
+                )
+            with dc2:
+                st.markdown("<p style='text-align:center; color:#1f77b4; margin:0; padding:8px 0 0 0;'>|</p>", unsafe_allow_html=True)
+            with dc3:
+                st.download_button(
+                    label="Excel",
+                    data=excel_buffer.getvalue(),
+                    file_name="pfin8_table.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
 
         st.table(pivot_df)
 
@@ -1512,34 +1522,42 @@ def main():
         except Exception:
             pass
 
-        # Export links at top-right
+        # Export links at top-right as inline text
         if png_available:
-            spacer_col, b1, p1, b2 = st.columns([40, 2, 0.5, 2])
-            with b1:
-                st.download_button(
-                    label="PNG",
-                    data=png_bytes,
-                    file_name="pfin8_chart.png",
-                    mime="image/png",
-                )
-            with p1:
-                st.markdown("<p style='text-align:center; color:#1f77b4; margin-top:8px;'>|</p>", unsafe_allow_html=True)
-            with b2:
-                st.download_button(
-                    label="HTML",
-                    data=fig.to_html(include_plotlyjs="cdn"),
-                    file_name="pfin8_chart.html",
-                    mime="text/html",
-                )
+            spacer_col, dl_col = st.columns([7, 3])
+            with dl_col:
+                lbl, dc1, dc2, dc3 = st.columns([1.5, 1, 0.3, 1])
+                with lbl:
+                    st.markdown("<p style='color:#1f77b4; margin:0; padding:8px 0 0 0; font-size:0.9rem;'>Download:</p>", unsafe_allow_html=True)
+                with dc1:
+                    st.download_button(
+                        label="PNG",
+                        data=png_bytes,
+                        file_name="pfin8_chart.png",
+                        mime="image/png",
+                    )
+                with dc2:
+                    st.markdown("<p style='text-align:center; color:#1f77b4; margin:0; padding:8px 0 0 0;'>|</p>", unsafe_allow_html=True)
+                with dc3:
+                    st.download_button(
+                        label="HTML",
+                        data=fig.to_html(include_plotlyjs="cdn"),
+                        file_name="pfin8_chart.html",
+                        mime="text/html",
+                    )
         else:
-            spacer_col, b1 = st.columns([40, 2])
-            with b1:
-                st.download_button(
-                    label="HTML",
-                    data=fig.to_html(include_plotlyjs="cdn"),
-                    file_name="pfin8_chart.html",
-                    mime="text/html",
-                )
+            spacer_col, dl_col = st.columns([7, 3])
+            with dl_col:
+                lbl, dc1 = st.columns([1.5, 1])
+                with lbl:
+                    st.markdown("<p style='color:#1f77b4; margin:0; padding:8px 0 0 0; font-size:0.9rem;'>Download:</p>", unsafe_allow_html=True)
+                with dc1:
+                    st.download_button(
+                        label="HTML",
+                        data=fig.to_html(include_plotlyjs="cdn"),
+                        file_name="pfin8_chart.html",
+                        mime="text/html",
+                    )
 
         st.plotly_chart(fig, use_container_width=True)
 
