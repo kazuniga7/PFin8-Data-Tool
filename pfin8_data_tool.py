@@ -263,19 +263,25 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 # CHART TYPE VALIDATION
 # ==============================================================================
-def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None):
+def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1):
     valid = []
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
             valid = ["Grouped Bar Chart", "Horizontal Bar Chart"]
+            if n_legend_groups == 1:
+                valid.insert(0, "Bar Chart")
             # Stacked and pie valid only when legend represents parts of a whole
             if axis_legend == "Response Category":
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
-            valid = ["Grouped Bar Chart", "Bar Chart", "Horizontal Bar Chart", "Line Chart"]
+            valid = ["Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
+            if n_legend_groups == 1:
+                valid.insert(0, "Bar Chart")
     else:  # Total Correct
-        valid = ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
+        valid = ["Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
+        if n_legend_groups == 1:
+            valid.insert(0, "Bar Chart")
         # Stacked and pie valid only when Total Correct scores are in the legend
         if axis_legend == "Total Correct":
             valid.append("Stacked Bar Chart")
@@ -818,8 +824,24 @@ def render_sidebar(df_years, df_genpop):
 
         st.markdown("---")
 
+        # Compute number of legend groups to determine if Bar Chart should be offered
+        n_legend_groups = 1
+        if axis_legend == "Topic":
+            n_legend_groups = len(selected_topics) if selected_topics else 8
+        elif axis_legend == "Response Category":
+            n_legend_groups = 3
+        elif axis_legend == "Total Correct":
+            n_legend_groups = (selected_range[1] - selected_range[0] + 1) if selected_range else 9
+        elif axis_legend == group_dim_label:
+            if environment == "Over the Years":
+                n_legend_groups = year_range[1] - year_range[0] + 1 if year_range else 10
+            elif analysis_variable == "Age (Custom Range)" and custom_age_range:
+                n_legend_groups = len(custom_age_range.get("groups", []))
+            elif subgroups:
+                n_legend_groups = len(subgroups)
+
         # Chart type selection (after axis assignment so stacked bar validity can be checked)
-        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend)
+        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups)
         chart_type = st.selectbox("Chart Type", valid_charts)
 
         return {
