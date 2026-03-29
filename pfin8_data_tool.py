@@ -819,51 +819,124 @@ def render_sidebar(df_years, df_genpop):
         else:
             group_dim_label = analysis_variable if analysis_variable else "Financial Well-Being"
 
+        # Compute dimension sizes to determine if axis assignment should be shown
+        n_topics = len(selected_topics) if selected_topics else 8
+        n_total_correct = (selected_range[1] - selected_range[0] + 1) if selected_range else 9
+
+        # Count group dimension values
+        if environment == "Over the Years":
+            n_group = year_range[1] - year_range[0] + 1 if year_range else 10
+        elif analysis_variable == "Age (Custom Range)" and custom_age_range:
+            n_group = len(custom_age_range.get("groups", []))
+        elif subgroups:
+            n_group = len(subgroups)
+        else:
+            n_group = 1
+
         axis_x = None
         axis_legend = None
         axis_facet = None
+        single_group_value = None  # Track the single group's display value for title
 
         if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
             # 3 dimensions: Topic, Group, Response Category
+            # Response Category always has 3, so check Topic and Group
             dimensions = ["Topic", group_dim_label, "Response Category"]
-            st.markdown("**Axis Assignment**")
-            axis_x = st.selectbox("X-Axis", dimensions, index=1)
-            remaining_for_legend = [d for d in dimensions if d != axis_x]
-            axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
-            axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
-            st.caption(f"Facet (panels): **{axis_facet}**")
+
+            if n_topics == 1 and n_group > 1:
+                # Single topic — auto-assign, hide dropdowns
+                axis_x = group_dim_label
+                single_group_value = selected_topics[0] if selected_topics else None
+                remaining = [d for d in dimensions if d != axis_x and d != "Topic"]
+                st.markdown("**Axis Assignment**")
+                axis_legend = st.selectbox("Legend", remaining, index=0)
+                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != "Topic"][0] if len(remaining) > 1 else None
+                if not axis_facet:
+                    axis_facet = "Topic"
+                st.caption(f"Facet (panels): **{axis_facet}**")
+            elif n_group == 1 and n_topics > 1:
+                # Single group — auto-assign, hide dropdowns
+                axis_x = "Topic"
+                # Determine the single group's display value
+                if environment == "Over the Years" and year_range:
+                    single_group_value = str(year_range[0])
+                elif subgroups and len(subgroups) == 1:
+                    single_group_value = str(subgroups[0])
+                remaining = [d for d in dimensions if d != axis_x and d != group_dim_label]
+                st.markdown("**Axis Assignment**")
+                axis_legend = st.selectbox("Legend", remaining, index=0)
+                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != group_dim_label][0] if len(remaining) > 1 else None
+                if not axis_facet:
+                    axis_facet = group_dim_label
+                st.caption(f"Facet (panels): **{axis_facet}**")
+            else:
+                # Both have multiple values — show full dropdowns
+                st.markdown("**Axis Assignment**")
+                axis_x = st.selectbox("X-Axis", dimensions, index=1)
+                remaining_for_legend = [d for d in dimensions if d != axis_x]
+                axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
+                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
+                st.caption(f"Facet (panels): **{axis_facet}**")
+
         elif analysis_type == "Topic Bucket":
             # 2 dimensions: Topic and Group
-            dimensions = ["Topic", group_dim_label]
-            st.markdown("**Axis Assignment**")
-            axis_x = st.selectbox("X-Axis", dimensions, index=0)
-            axis_legend = [d for d in dimensions if d != axis_x][0]
-            st.caption(f"Legend: **{axis_legend}**")
+            if n_topics == 1 and n_group > 1:
+                axis_x = group_dim_label
+                axis_legend = "Topic"
+                single_group_value = selected_topics[0] if selected_topics else None
+            elif n_group == 1 and n_topics > 1:
+                axis_x = "Topic"
+                axis_legend = group_dim_label
+                if environment == "Over the Years" and year_range:
+                    single_group_value = str(year_range[0])
+                elif subgroups and len(subgroups) == 1:
+                    single_group_value = str(subgroups[0])
+            elif n_topics == 1 and n_group == 1:
+                axis_x = "Topic"
+                axis_legend = group_dim_label
+                single_group_value = selected_topics[0] if selected_topics else None
+            else:
+                st.markdown("**Axis Assignment**")
+                dimensions = ["Topic", group_dim_label]
+                axis_x = st.selectbox("X-Axis", dimensions, index=0)
+                axis_legend = [d for d in dimensions if d != axis_x][0]
+                st.caption(f"Legend: **{axis_legend}**")
+
         else:
             # 2 dimensions: Total Correct and Group
-            dimensions = ["Total Correct", group_dim_label]
-            st.markdown("**Axis Assignment**")
-            axis_x = st.selectbox("X-Axis", dimensions, index=0)
-            axis_legend = [d for d in dimensions if d != axis_x][0]
-            st.caption(f"Legend: **{axis_legend}**")
+            if n_total_correct == 1 and n_group > 1:
+                axis_x = group_dim_label
+                axis_legend = "Total Correct"
+                single_group_value = TOTAL_CORRECT_LABELS.get(selected_range[0], str(selected_range[0])) if selected_range else None
+            elif n_group == 1 and n_total_correct > 1:
+                axis_x = "Total Correct"
+                axis_legend = group_dim_label
+                if environment == "Over the Years" and year_range:
+                    single_group_value = str(year_range[0])
+                elif subgroups and len(subgroups) == 1:
+                    single_group_value = str(subgroups[0])
+            elif n_total_correct == 1 and n_group == 1:
+                axis_x = "Total Correct"
+                axis_legend = group_dim_label
+            else:
+                st.markdown("**Axis Assignment**")
+                dimensions = ["Total Correct", group_dim_label]
+                axis_x = st.selectbox("X-Axis", dimensions, index=0)
+                axis_legend = [d for d in dimensions if d != axis_x][0]
+                st.caption(f"Legend: **{axis_legend}**")
 
         st.markdown("---")
 
-        # Compute number of legend groups to determine if Bar Chart should be offered
+        # Compute number of legend groups for chart type validation
         n_legend_groups = 1
         if axis_legend == "Topic":
-            n_legend_groups = len(selected_topics) if selected_topics else 8
+            n_legend_groups = n_topics
         elif axis_legend == "Response Category":
             n_legend_groups = 3
         elif axis_legend == "Total Correct":
-            n_legend_groups = (selected_range[1] - selected_range[0] + 1) if selected_range else 9
+            n_legend_groups = n_total_correct
         elif axis_legend == group_dim_label:
-            if environment == "Over the Years":
-                n_legend_groups = year_range[1] - year_range[0] + 1 if year_range else 10
-            elif analysis_variable == "Age (Custom Range)" and custom_age_range:
-                n_legend_groups = len(custom_age_range.get("groups", []))
-            elif subgroups:
-                n_legend_groups = len(subgroups)
+            n_legend_groups = n_group
 
         # Chart type selection (after axis assignment so stacked bar validity can be checked)
         valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups)
@@ -885,6 +958,7 @@ def render_sidebar(df_years, df_genpop):
             "axis_legend": axis_legend,
             "axis_facet": axis_facet,
             "group_dim_label": group_dim_label,
+            "single_group_value": single_group_value,
         }
 
 
@@ -991,6 +1065,7 @@ def run_analysis(config, df_years, df_genpop):
     axis_x = config["axis_x"]
     axis_legend = config["axis_legend"]
     axis_facet = config.get("axis_facet")
+    single_group_value = config.get("single_group_value")
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
@@ -1023,7 +1098,7 @@ def run_analysis(config, df_years, df_genpop):
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
             x_label = x_dim_label
-            title = f"P-Fin 8: % Correct — {x_dim_label} × {legend_dim_label}"
+            title = f"P-Fin 8: % Correct — {single_group_value}" if single_group_value else f"P-Fin 8: % Correct — {x_dim_label} × {legend_dim_label}"
 
         else:
             topics_map = {k: v for k, v in TOPIC_CAT3_NAMES.items() if k in selected_topics}
@@ -1044,7 +1119,7 @@ def run_analysis(config, df_years, df_genpop):
             color_col = legend_col
             use_facet = facet_col
             x_label = x_dim_label
-            title = f"P-Fin 8: Response Distribution by {group_label}"
+            title = f"P-Fin 8: Response Distribution — {single_group_value}" if single_group_value else f"P-Fin 8: Response Distribution by {group_label}"
 
             # Set category orders for response_category if used
             if "response_category" in [x_col, legend_col, facet_col]:
@@ -1065,7 +1140,7 @@ def run_analysis(config, df_years, df_genpop):
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
         x_label = x_dim_label
-        title = f"P-Fin 8: Distribution of Total Correct — {x_dim_label} × {legend_dim_label}"
+        title = f"P-Fin 8: Distribution of Total Correct — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of Total Correct — {x_dim_label} × {legend_dim_label}"
 
         # Ensure score order
         if not chart_data.empty:
