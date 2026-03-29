@@ -311,12 +311,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
         if chart_type == "Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
-                color=color_col, barmode="group",
+                barmode="group",
                 title=title, labels=label_map,
                 category_orders=category_orders,
                 color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
+            fig.update_layout(showlegend=False)
         elif chart_type == "Grouped Bar Chart":
             fig = px.bar(
                 chart_data, x="x", y="percentage",
@@ -390,7 +391,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 elif hover_mode == "total_correct":
                     for trace in fig.data:
-                        if chart_type == "Horizontal Bar Chart":
+                        if chart_type == "Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% of Respondents: %{{y:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                        elif chart_type == "Horizontal Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
                                 f"% of Respondents: %{{x:.1f}}%<br>"
@@ -406,7 +413,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             )
                 else:  # binary
                     for trace in fig.data:
-                        if chart_type == "Horizontal Bar Chart":
+                        if chart_type == "Bar Chart":
+                            trace.hovertemplate = (
+                                f"{x_label}: %{{x}}<br>"
+                                f"% Correct: %{{y:.1f}}%<br>"
+                                f"<extra></extra>"
+                            )
+                        elif chart_type == "Horizontal Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
                                 f"% Correct: %{{x:.1f}}%<br>"
