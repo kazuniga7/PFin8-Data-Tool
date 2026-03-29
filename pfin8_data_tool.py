@@ -265,24 +265,22 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1):
     valid = []
+    # Bar Chart and Grouped Bar Chart are mutually exclusive
+    if n_legend_groups == 1:
+        bar_option = "Bar Chart"
+    else:
+        bar_option = "Grouped Bar Chart"
+
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
-            valid = ["Grouped Bar Chart", "Horizontal Bar Chart"]
-            if n_legend_groups == 1:
-                valid.insert(0, "Bar Chart")
-            # Stacked and pie valid only when legend represents parts of a whole
+            valid = [bar_option, "Horizontal Bar Chart"]
             if axis_legend == "Response Category":
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
-            valid = ["Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
-            if n_legend_groups == 1:
-                valid.insert(0, "Bar Chart")
+            valid = [bar_option, "Horizontal Bar Chart", "Line Chart"]
     else:  # Total Correct
-        valid = ["Grouped Bar Chart", "Horizontal Bar Chart", "Line Chart"]
-        if n_legend_groups == 1:
-            valid.insert(0, "Bar Chart")
-        # Stacked and pie valid only when Total Correct scores are in the legend
+        valid = [bar_option, "Horizontal Bar Chart", "Line Chart"]
         if axis_legend == "Total Correct":
             valid.append("Stacked Bar Chart")
             valid.append("Pie Chart")
