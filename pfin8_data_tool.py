@@ -263,7 +263,7 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 # CHART TYPE VALIDATION
 # ==============================================================================
-def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1):
+def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1, n_total_correct=9, n_x_groups=2):
     valid = []
     # Bar and Grouped Bar are mutually exclusive based on legend group count
     if n_legend_groups == 1:
@@ -276,20 +276,23 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
             valid = [bar_option, h_bar_option]
-            # Stacked and pie are valid when Response Category is in the legend
-            # OR when there's a single group (Response Category is still part of the data)
+            # Stacked and pie always valid for 3-category (Response Category always has 3 values)
             if axis_legend == "Response Category" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
-            valid = [bar_option, h_bar_option, "Line Chart"]
+            valid = [bar_option, h_bar_option]
+            if n_x_groups > 1:
+                valid.append("Line Chart")
     else:  # Total Correct
-        valid = [bar_option, h_bar_option, "Line Chart"]
-        # Stacked and pie valid when Total Correct is in the legend
-        # OR when there's a single group (score distribution is still parts of whole)
-        if axis_legend == "Total Correct" or n_legend_groups == 1:
-            valid.append("Stacked Bar Chart")
-            valid.append("Pie Chart")
+        valid = [bar_option, h_bar_option]
+        if n_x_groups > 1:
+            valid.append("Line Chart")
+        # Stacked and pie only valid when full score range (0-8) is selected
+        if n_total_correct == 9:
+            if axis_legend == "Total Correct" or n_legend_groups == 1:
+                valid.append("Stacked Bar Chart")
+                valid.append("Pie Chart")
     valid.append("Table")
     return valid
 
@@ -371,36 +374,46 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             # Determine which column has the parts-of-whole (slices)
             slice_col = pie_names_col if pie_names_col else color_col
 
-            # Check if x column contains the same data as slice_col
-            x_is_slice = False
-            if slice_col in chart_data.columns and "x" in chart_data.columns:
-                x_is_slice = chart_data["x"].equals(chart_data[slice_col]) or set(chart_data["x"].unique()) == set(chart_data[slice_col].unique())
+            # Identify all non-slice dimensions that have multiple values
+            facet_dims = []
+            for col in ["x", "group_value", "topic", "score_label"]:
+                if col in chart_data.columns and col != slice_col:
+                    # Check if x is just a copy of this col
+                    if col == "x":
+                        continue
+                    if chart_data[col].nunique() > 1:
+                        facet_dims.append(col)
+            # Also check x if it's not a copy of slice_col
+            if "x" in chart_data.columns and not (
+                slice_col in chart_data.columns and
+                set(chart_data["x"].unique()) == set(chart_data[slice_col].unique())
+            ):
+                if chart_data["x"].nunique() > 1 and "x" not in facet_dims:
+                    # Check x isn't a copy of an existing facet dim
+                    is_copy = False
+                    for fd in facet_dims:
+                        if set(chart_data["x"].unique()) == set(chart_data[fd].unique()):
+                            is_copy = True
+                            break
+                    if not is_copy:
+                        facet_dims.insert(0, "x")
 
-            # Determine faceting dimension
-            facet_by = None
-            if x_is_slice:
-                # x and slices are the same dimension, facet by group_value if multiple
-                if "group_value" in chart_data.columns and chart_data["group_value"].nunique() > 1:
-                    facet_by = "group_value"
-            elif slice_col == "x":
-                if color_col in chart_data.columns and chart_data[color_col].nunique() > 1:
-                    facet_by = color_col
-            elif slice_col == color_col:
-                if chart_data["x"].nunique() > 1:
-                    facet_by = "x"
-            else:
-                # slice_col is separate, check other dimensions
-                if "group_value" in chart_data.columns and chart_data["group_value"].nunique() > 1:
-                    facet_by = "group_value"
-                elif chart_data["x"].nunique() > 1 and not x_is_slice:
-                    facet_by = "x"
-
-            if facet_by:
+            if len(facet_dims) >= 2:
+                # Multiple dimensions need faceting — create combined column
+                chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
                 fig = px.pie(
                     chart_data, values="percentage", names=slice_col,
                     title=title, labels=label_map,
                     color_discrete_sequence=streamlit_colors,
-                    facet_col=facet_by,
+                    facet_col="_pie_facet",
+                    facet_col_wrap=4,
+                )
+            elif len(facet_dims) == 1:
+                fig = px.pie(
+                    chart_data, values="percentage", names=slice_col,
+                    title=title, labels=label_map,
+                    color_discrete_sequence=streamlit_colors,
+                    facet_col=facet_dims[0],
                     facet_col_wrap=4,
                 )
             else:
@@ -1000,8 +1013,19 @@ def render_sidebar(df_years, df_genpop):
         elif axis_legend == group_dim_label:
             n_legend_groups = n_group
 
+        # Compute number of x-axis groups
+        n_x_groups = 1
+        if axis_x == "Topic":
+            n_x_groups = n_topics
+        elif axis_x == "Response Category":
+            n_x_groups = 3
+        elif axis_x == "Total Correct":
+            n_x_groups = n_total_correct
+        elif axis_x == group_dim_label:
+            n_x_groups = n_group
+
         # Chart type selection (after axis assignment so stacked bar validity can be checked)
-        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups)
+        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
         chart_type = st.selectbox("Chart Type", valid_charts)
 
         return {
