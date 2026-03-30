@@ -1475,12 +1475,15 @@ def main():
             )])
             n_rows = len(pivot_df)
             n_cols = len(header_vals)
+            # Calculate width based on longest header/cell text
+            max_header_len = max(len(str(h)) for h in header_vals)
+            col_width = max(150, max_header_len * 12)
             table_fig.update_layout(
                 title=chart_title,
                 title_font=dict(size=16),
-                width=max(800, n_cols * 120),
-                height=max(300, 60 + n_rows * 30),
-                margin=dict(l=10, r=10, t=40, b=10),
+                width=max(900, n_cols * col_width),
+                height=max(400, 80 + n_rows * 35),
+                margin=dict(l=10, r=10, t=50, b=10),
             )
             table_png_bytes = table_fig.to_image(format="png", scale=2)
             table_png_b64 = base64.b64encode(table_png_bytes).decode()
