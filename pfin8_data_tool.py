@@ -299,7 +299,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
 # ==============================================================================
 def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None,
                  category_orders=None, group_label="group", hover_mode="binary",
-                 legend_label=None, facet_col=None, n_legend_groups=None):
+                 legend_label=None, facet_col=None, n_legend_groups=None, pie_names_col=None):
     fig = None
     try:
         label_map = {
@@ -368,13 +368,47 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 **facet_args,
             )
         elif chart_type == "Pie Chart":
-            fig = px.pie(
-                chart_data, values="percentage", names=color_col,
-                title=title, labels=label_map,
-                color_discrete_sequence=streamlit_colors,
-                facet_col="x" if chart_data["x"].nunique() > 1 else None,
-                facet_col_wrap=4 if chart_data["x"].nunique() > 1 else None,
-            )
+            # Determine which column has the parts-of-whole (slices)
+            slice_col = pie_names_col if pie_names_col else color_col
+
+            # Check if x column contains the same data as slice_col
+            x_is_slice = False
+            if slice_col in chart_data.columns and "x" in chart_data.columns:
+                x_is_slice = chart_data["x"].equals(chart_data[slice_col]) or set(chart_data["x"].unique()) == set(chart_data[slice_col].unique())
+
+            # Determine faceting dimension
+            facet_by = None
+            if x_is_slice:
+                # x and slices are the same dimension, facet by group_value if multiple
+                if "group_value" in chart_data.columns and chart_data["group_value"].nunique() > 1:
+                    facet_by = "group_value"
+            elif slice_col == "x":
+                if color_col in chart_data.columns and chart_data[color_col].nunique() > 1:
+                    facet_by = color_col
+            elif slice_col == color_col:
+                if chart_data["x"].nunique() > 1:
+                    facet_by = "x"
+            else:
+                # slice_col is separate, check other dimensions
+                if "group_value" in chart_data.columns and chart_data["group_value"].nunique() > 1:
+                    facet_by = "group_value"
+                elif chart_data["x"].nunique() > 1 and not x_is_slice:
+                    facet_by = "x"
+
+            if facet_by:
+                fig = px.pie(
+                    chart_data, values="percentage", names=slice_col,
+                    title=title, labels=label_map,
+                    color_discrete_sequence=streamlit_colors,
+                    facet_col=facet_by,
+                    facet_col_wrap=4,
+                )
+            else:
+                fig = px.pie(
+                    chart_data, values="percentage", names=slice_col,
+                    title=title, labels=label_map,
+                    color_discrete_sequence=streamlit_colors,
+                )
             fig.update_traces(textposition="inside", textinfo="percent+label")
         elif chart_type == "Line Chart":
             # If single group, don't color by legend
@@ -486,8 +520,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
             # Layout adjustments
             if chart_type == "Pie Chart":
-                n_x = chart_data["x"].nunique()
-                pie_height = 400 if n_x <= 1 else 400 * ((n_x + 3) // 4)
+                n_pies = len(fig.data)
+                pie_height = 400 if n_pies <= 4 else 400 * ((n_pies + 3) // 4)
                 fig.update_layout(
                     legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
                     template="plotly_white",
@@ -1202,10 +1236,19 @@ def run_analysis(config, df_years, df_genpop):
     if chart_type != "Table":
         # Compute n_legend_groups from actual data
         actual_n_legend_groups = chart_data[color_col].nunique() if color_col in chart_data.columns else 1
+
+        # Determine pie chart slice column (parts-of-whole dimension)
+        pie_names = None
+        if chart_type == "Pie Chart":
+            if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
+                pie_names = "response_category"
+            elif analysis_type == "Total Correct":
+                pie_names = "score_label"
+
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
                            category_orders, group_label=legend_label_text, hover_mode=hover_mode,
                            legend_label=legend_label_text, facet_col=use_facet,
-                           n_legend_groups=actual_n_legend_groups)
+                           n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names)
 
     # Generate note
     note = generate_note(
