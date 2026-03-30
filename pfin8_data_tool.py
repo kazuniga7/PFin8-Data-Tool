@@ -293,7 +293,9 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             if axis_legend == "Total Correct" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
-    valid.append("Table")
+    # Table available unless it would be a single data point
+    if not (n_x_groups == 1 and n_legend_groups == 1):
+        valid.append("Table")
     return valid
 
 
