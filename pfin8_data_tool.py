@@ -1318,55 +1318,6 @@ def main():
         [data-testid="stButton"] button p {
             font-weight: 800 !important;
         }
-        /* Download buttons styled as blue underlined text */
-        [data-testid="stDownloadButton"] {
-            display: inline !important;
-        }
-        [data-testid="stDownloadButton"] button {
-            background: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #1f77b4 !important;
-            text-decoration: underline !important;
-            font-size: 0.9rem !important;
-            cursor: pointer !important;
-            box-shadow: none !important;
-            min-height: 0 !important;
-            line-height: 1.5 !important;
-            display: inline !important;
-        }
-        [data-testid="stDownloadButton"] button:hover {
-            color: #1f4e79 !important;
-        }
-        [data-testid="stDownloadButton"] button p {
-            color: #1f77b4 !important;
-            text-decoration: underline !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: inline !important;
-        }
-        [data-testid="stDownloadButton"] button:hover p {
-            color: #1f4e79 !important;
-        }
-        /* Download label */
-        .download-label {
-            font-size: 0.9rem !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: inline !important;
-        }
-        /* Force download container to flow inline */
-        [data-testid="stVerticalBlock"]:has(> .download-label) > * {
-            display: inline !important;
-        }
-        /* Add pipe separator between download buttons */
-        [data-testid="stDownloadButton"] + [data-testid="stDownloadButton"]::before {
-            content: " | ";
-            color: #1f77b4;
-            text-decoration: none !important;
-            font-size: 0.9rem;
-        }
         /* Hide anchor links on headers */
         h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
         [data-testid="stMarkdown"] h1 a,
@@ -1489,19 +1440,32 @@ def main():
             pivot_df[col] = pivot_df[col].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "")
 
         # Title and export links
+        import base64
+        from io import BytesIO
+
+        csv_data = pivot_df.to_csv(index=True)
+        csv_b64 = base64.b64encode(csv_data.encode()).decode()
+
+        excel_buffer = BytesIO()
+        pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
+        excel_buffer.seek(0)
+        xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
+
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
         with dl_col:
-            from io import BytesIO
-            excel_buffer = BytesIO()
-            pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
-            excel_buffer.seek(0)
-            dl_container = st.container()
-            with dl_container:
-                st.markdown('<p class="download-label">Download: </p>', unsafe_allow_html=True)
-                st.download_button(label="CSV", data=pivot_df.to_csv(index=True), file_name="pfin8_table.csv", mime="text/csv", key="dl_csv")
-                st.download_button(label="Excel", data=excel_buffer.getvalue(), file_name="pfin8_table.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="dl_xlsx")
+            download_html = (
+                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                f'Download: '
+                f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
+                f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+                f' | '
+                f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
+                f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
+                f'</div>'
+            )
+            st.markdown(download_html, unsafe_allow_html=True)
 
         st.table(pivot_df)
 
@@ -1528,18 +1492,32 @@ def main():
         except Exception:
             pass
 
-        # Export links at top-right
-        spacer_col, dl_col = st.columns([7, 3])
-        with dl_col:
-            dl_container = st.container()
-            with dl_container:
-                if png_available:
-                    st.markdown('<p class="download-label">Download: <span id="dl-placeholder"></span></p>', unsafe_allow_html=True)
-                    st.download_button(label="PNG", data=png_bytes, file_name="pfin8_chart.png", mime="image/png", key="dl_png")
-                    st.download_button(label="HTML", data=fig.to_html(include_plotlyjs="cdn"), file_name="pfin8_chart.html", mime="text/html", key="dl_html")
-                else:
-                    st.markdown('<p class="download-label">Download: </p>', unsafe_allow_html=True)
-                    st.download_button(label="HTML", data=fig.to_html(include_plotlyjs="cdn"), file_name="pfin8_chart.html", mime="text/html", key="dl_html")
+        # Build HTML download data
+        import base64
+        html_data = fig.to_html(include_plotlyjs="cdn")
+        html_b64 = base64.b64encode(html_data.encode()).decode()
+
+        if png_available:
+            png_b64 = base64.b64encode(png_bytes).decode()
+            download_html = (
+                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                f'Download: '
+                f'<a href="data:image/png;base64,{png_b64}" download="pfin8_chart.png" '
+                f'style="color:#1f77b4; text-decoration:underline;">PNG</a>'
+                f' | '
+                f'<a href="data:text/html;base64,{html_b64}" download="pfin8_chart.html" '
+                f'style="color:#1f77b4; text-decoration:underline;">HTML</a>'
+                f'</div>'
+            )
+        else:
+            download_html = (
+                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                f'Download: '
+                f'<a href="data:text/html;base64,{html_b64}" download="pfin8_chart.html" '
+                f'style="color:#1f77b4; text-decoration:underline;">HTML</a>'
+                f'</div>'
+            )
+        st.markdown(download_html, unsafe_allow_html=True)
 
         st.plotly_chart(fig, use_container_width=True)
 
