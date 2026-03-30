@@ -910,38 +910,39 @@ def render_sidebar(df_years, df_genpop):
             # Response Category always has 3, so check Topic and Group
             dimensions = ["Topic", group_dim_label, "Response Category"]
 
-            if n_topics == 1 and n_group > 1:
-                # Single topic — auto-assign, hide dropdowns
-                axis_x = group_dim_label
+            if n_topics == 1 and n_group == 1:
+                # Both single — auto-assign everything, no dropdowns
+                axis_x = "Response Category"
+                axis_legend = "Topic"
+                axis_facet = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
-                remaining = [d for d in dimensions if d != axis_x and d != "Topic"]
+            elif n_topics == 1 and n_group > 1:
+                # Single topic — 2 remaining dimensions to assign
+                single_group_value = selected_topics[0] if selected_topics else None
+                remaining = [d for d in dimensions if d != "Topic"]
                 st.markdown("---")
                 st.markdown("**Axis Assignment**")
                 axis_assignment_shown = True
-                axis_legend = st.selectbox("Legend", remaining, index=0)
-                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != "Topic"][0] if len(remaining) > 1 else None
-                if not axis_facet:
-                    axis_facet = "Topic"
-                st.caption(f"Facet (panels): **{axis_facet}**")
+                axis_x = st.selectbox("X-Axis", remaining, index=0)
+                axis_legend = [d for d in remaining if d != axis_x][0]
+                st.caption(f"Legend: **{axis_legend}**")
+                axis_facet = "Topic"
             elif n_group == 1 and n_topics > 1:
-                # Single group — auto-assign, hide dropdowns
-                axis_x = "Topic"
-                # Determine the single group's display value
+                # Single group — 2 remaining dimensions to assign
                 if environment == "Over the Years" and year_range:
                     single_group_value = str(year_range[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
-                remaining = [d for d in dimensions if d != axis_x and d != group_dim_label]
+                remaining = [d for d in dimensions if d != group_dim_label]
                 st.markdown("---")
                 st.markdown("**Axis Assignment**")
                 axis_assignment_shown = True
-                axis_legend = st.selectbox("Legend", remaining, index=0)
-                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend and d != group_dim_label][0] if len(remaining) > 1 else None
-                if not axis_facet:
-                    axis_facet = group_dim_label
-                st.caption(f"Facet (panels): **{axis_facet}**")
+                axis_x = st.selectbox("X-Axis", remaining, index=0)
+                axis_legend = [d for d in remaining if d != axis_x][0]
+                st.caption(f"Legend: **{axis_legend}**")
+                axis_facet = group_dim_label
             else:
-                # Both have multiple values — show full dropdowns
+                # Both have multiple values — show full 3-way dropdowns
                 st.markdown("---")
                 st.markdown("**Axis Assignment**")
                 axis_assignment_shown = True
@@ -1205,7 +1206,11 @@ def run_analysis(config, df_years, df_genpop):
 
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
-            use_facet = facet_col
+            # Only facet if the facet dimension has multiple values
+            if facet_col and facet_col in chart_data.columns and chart_data[facet_col].nunique() > 1:
+                use_facet = facet_col
+            else:
+                use_facet = None
             x_label = x_dim_label
             title = f"P-Fin 8: Response Distribution — {single_group_value}" if single_group_value else f"P-Fin 8: Response Distribution by {group_label}"
 
