@@ -1451,20 +1451,72 @@ def main():
         excel_buffer.seek(0)
         xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
 
+        # Generate table as PNG using Plotly go.Table
+        table_png_available = False
+        table_png_b64 = ""
+        try:
+            header_vals = [pivot_df.index.name or ""] + list(pivot_df.columns)
+            cell_vals = [[str(v) for v in pivot_df.index]] + [
+                [str(v) for v in pivot_df[col]] for col in pivot_df.columns
+            ]
+            table_fig = go.Figure(data=[go.Table(
+                header=dict(
+                    values=[f"<b>{h}</b>" for h in header_vals],
+                    fill_color="#636EFA",
+                    font=dict(color="white", size=13),
+                    align="center",
+                ),
+                cells=dict(
+                    values=cell_vals,
+                    fill_color=[["#f9f9f9", "white"] * (len(pivot_df) // 2 + 1)],
+                    font=dict(size=12),
+                    align=["left"] + ["center"] * len(pivot_df.columns),
+                ),
+            )])
+            n_rows = len(pivot_df)
+            n_cols = len(header_vals)
+            table_fig.update_layout(
+                title=chart_title,
+                title_font=dict(size=16),
+                width=max(800, n_cols * 120),
+                height=max(300, 60 + n_rows * 30),
+                margin=dict(l=10, r=10, t=40, b=10),
+            )
+            table_png_bytes = table_fig.to_image(format="png", scale=2)
+            table_png_b64 = base64.b64encode(table_png_bytes).decode()
+            table_png_available = True
+        except Exception:
+            pass
+
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
         with dl_col:
-            download_html = (
-                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-                f'Download: '
-                f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
-                f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-                f' | '
-                f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
-                f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
-                f'</div>'
-            )
+            if table_png_available:
+                download_html = (
+                    f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                    f'Download: '
+                    f'<a href="data:image/png;base64,{table_png_b64}" download="pfin8_table.png" '
+                    f'style="color:#1f77b4; text-decoration:underline;">PNG</a>'
+                    f' | '
+                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
+                    f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+                    f' | '
+                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
+                    f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
+                    f'</div>'
+                )
+            else:
+                download_html = (
+                    f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                    f'Download: '
+                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
+                    f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+                    f' | '
+                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
+                    f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
+                    f'</div>'
+                )
             st.markdown(download_html, unsafe_allow_html=True)
 
         st.table(pivot_df)
