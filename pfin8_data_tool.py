@@ -304,7 +304,8 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
 # ==============================================================================
 def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None,
                  category_orders=None, group_label="group", hover_mode="binary",
-                 legend_label=None, facet_col=None, n_legend_groups=None, pie_names_col=None):
+                 legend_label=None, facet_col=None, n_legend_groups=None, pie_names_col=None,
+                 show_pct_labels=False):
     fig = None
     try:
         label_map = {
@@ -556,7 +557,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     title_font=dict(size=16),
                     height=800 if facet_col else 500,
                 )
-                fig.update_xaxes(range=[0, 105])
+                fig.update_xaxes(range=[0, 112 if show_pct_labels else 105])
                 if facet_col:
                     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             else:
@@ -569,7 +570,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     title_font=dict(size=16),
                     height=800 if facet_col else 500,
                 )
-                fig.update_yaxes(range=[0, 105])
+                fig.update_yaxes(range=[0, 112 if show_pct_labels else 105])
 
             # Cap bar width when there are 4 or fewer x-axis categories
             # Only for stacked bars — use bargap to add space around bars
@@ -587,6 +588,39 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             # Clean up facet subplot titles (remove "topic=" prefix)
             if facet_col:
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+            # Add percentage labels on bars
+            if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
+                                                   "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
+                                                   "Stacked Bar Chart"]:
+                # Count total number of bars to determine font size
+                total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
+                                 for trace in fig.data)
+                if total_bars <= 8:
+                    text_size = 12
+                elif total_bars <= 16:
+                    text_size = 10
+                elif total_bars <= 30:
+                    text_size = 8
+                else:
+                    text_size = None  # Hide labels when too many bars
+
+                if text_size:
+                    if chart_type == "Stacked Bar Chart":
+                        text_pos = "inside"
+                        text_template = "%{y:.0f}%"
+                    elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
+                        text_pos = "auto"
+                        text_template = "%{x:.0f}%"
+                    else:
+                        text_pos = "auto"
+                        text_template = "%{y:.0f}%"
+
+                    fig.update_traces(
+                        texttemplate=text_template,
+                        textposition=text_pos,
+                        textfont_size=text_size,
+                    )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
         return None
@@ -1031,6 +1065,12 @@ def render_sidebar(df_years, df_genpop):
         valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
         chart_type = st.selectbox("Chart Type", valid_charts)
 
+        # Show percentages toggle (only for bar chart types)
+        show_pct_labels = False
+        if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
+                          "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
+            show_pct_labels = st.toggle("Show percentages on bars", value=True)
+
         return {
             "environment": environment,
             "analysis_type": analysis_type,
@@ -1048,6 +1088,7 @@ def render_sidebar(df_years, df_genpop):
             "axis_facet": axis_facet,
             "group_dim_label": group_dim_label,
             "single_group_value": single_group_value,
+            "show_pct_labels": show_pct_labels,
         }
 
 
@@ -1285,7 +1326,8 @@ def run_analysis(config, df_years, df_genpop):
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
                            category_orders, group_label=legend_label_text, hover_mode=hover_mode,
                            legend_label=legend_label_text, facet_col=use_facet,
-                           n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names)
+                           n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names,
+                           show_pct_labels=config.get("show_pct_labels", False))
 
     # Generate note
     note = generate_note(
