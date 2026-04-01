@@ -1201,6 +1201,12 @@ def run_analysis(config, df_years, df_genpop):
             facet_dim = axis_facet
             facet_col = dim_to_col(axis_facet, "cat3") if axis_facet else None
 
+            # For stacked bar and pie, Response Category must be in the legend (color)
+            # If it's on the x-axis, swap x and legend
+            if chart_type in ["Stacked Bar Chart", "Pie Chart"] and x_col == "response_category":
+                x_col, legend_col = legend_col, x_col
+                axis_x, axis_legend = axis_legend, axis_x
+
             x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
             legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
 
