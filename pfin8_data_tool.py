@@ -468,13 +468,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
-                                f"{pct_label}: %{{x:.1f}}%<br>"
+                                f"{pct_label}: %{{x:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                         else:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{x}}<br>"
-                                f"{pct_label}: %{{y:.1f}}%<br>"
+                                f"{pct_label}: %{{y:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                 elif hover_mode == "total_correct":
@@ -482,26 +482,26 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         if no_legend_chart and chart_type == "Horizontal Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
-                                f"% of Respondents: %{{x:.1f}}%<br>"
+                                f"% of Respondents: %{{x:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                         elif no_legend_chart:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{x}}<br>"
-                                f"% of Respondents: %{{y:.1f}}%<br>"
+                                f"% of Respondents: %{{y:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                         elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
-                                f"% of Respondents: %{{x:.1f}}%<br>"
+                                f"% of Respondents: %{{x:.0f}}%<br>"
                                 f"{group_label}: {trace.name}<br>"
                                 f"<extra></extra>"
                             )
                         else:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{x}}<br>"
-                                f"% of Respondents: %{{y:.1f}}%<br>"
+                                f"% of Respondents: %{{y:.0f}}%<br>"
                                 f"{group_label}: {trace.name}<br>"
                                 f"<extra></extra>"
                             )
@@ -510,26 +510,26 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         if no_legend_chart and chart_type == "Horizontal Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
-                                f"% Correct: %{{x:.1f}}%<br>"
+                                f"% Correct: %{{x:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                         elif no_legend_chart:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{x}}<br>"
-                                f"% Correct: %{{y:.1f}}%<br>"
+                                f"% Correct: %{{y:.0f}}%<br>"
                                 f"<extra></extra>"
                             )
                         elif chart_type == "Horizontal Grouped Bar Chart":
                             trace.hovertemplate = (
                                 f"{x_label}: %{{y}}<br>"
-                                f"% Correct: %{{x:.1f}}%<br>"
+                                f"% Correct: %{{x:.0f}}%<br>"
                                 f"{group_label}: {trace.name}<br>"
                                 f"<extra></extra>"
                             )
                         else:
                             trace.hovertemplate = (
                                 f"{x_label}: %{{x}}<br>"
-                                f"% Correct: %{{y:.1f}}%<br>"
+                                f"% Correct: %{{y:.0f}}%<br>"
                                 f"{group_label}: {trace.name}<br>"
                                 f"<extra></extra>"
                             )
