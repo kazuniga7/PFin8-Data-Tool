@@ -1690,10 +1690,16 @@ def main():
                 _c.border = _grp_border_map.get(_ci, _Border())
                 if len(_cats) > 1:
                     _ws.merge_cells(start_row=1, start_column=_start, end_row=1, end_column=_start + len(_cats) - 1)
-                for _cat in _cats:
+                for _ki2, _cat in enumerate(_cats):
                     _c2 = _ws.cell(row=2, column=_ci, value=_cat)
                     _c2.fill, _c2.font, _c2.alignment = _sub_fill, _sub_font, _ctr
-                    _c2.border = _grp_border_map.get(_ci, _Border())
+                    # Every sub-header cell gets thin gray dividers on both sides;
+                    # outer group edges use the group-boundary border from the map.
+                    _grp_b = _grp_border_map.get(_ci, _Border())
+                    _c2.border = _Border(
+                        left=_grp_b.left if _grp_b.left and _grp_b.left.style else _grp_side,
+                        right=_grp_b.right if _grp_b.right and _grp_b.right.style else _grp_side,
+                    )
                     _ci += 1
             # Response Count spanning rows 1–2
             _c = _ws.cell(row=1, column=_ci, value="Response Count")
