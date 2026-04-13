@@ -1713,9 +1713,9 @@ def main():
                     height=max(400, 80 + n_rows * 35),
                     margin=dict(l=10, r=10, t=50, b=10),
                 )
-                table_png_bytes = table_fig.to_image(format="png", scale=2)
-                table_png_b64 = base64.b64encode(table_png_bytes).decode()
-                table_png_available = True
+            table_png_bytes = table_fig.to_image(format="png", scale=2)
+            table_png_b64 = base64.b64encode(table_png_bytes).decode()
+            table_png_available = True
         except Exception:
             pass
 
