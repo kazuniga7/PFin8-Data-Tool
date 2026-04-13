@@ -573,6 +573,11 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 )
                 fig.update_yaxes(range=[0, 112 if show_pct_labels else 105])
 
+            # Force all axis text to black (plotly_white template overrides global font color)
+            fig.update_xaxes(tickfont=dict(color="black"), title_font=dict(color="black"))
+            fig.update_yaxes(tickfont=dict(color="black"), title_font=dict(color="black"))
+            fig.update_layout(legend=dict(font=dict(color="black"), title_font=dict(color="black")))
+
             # Cap bar width when there are 4 or fewer x-axis categories
             # Only for stacked bars — use bargap to add space around bars
             if chart_type == "Stacked Bar Chart":
