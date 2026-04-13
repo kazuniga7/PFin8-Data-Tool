@@ -1652,7 +1652,7 @@ def main():
         # Display note
         if note:
             st.markdown("---")
-            st.caption(note)
+            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note}</div>', unsafe_allow_html=True)
 
         # Debug panel
         render_debug_panel(checks)
@@ -1704,7 +1704,7 @@ def main():
         # Display note
         if note:
             st.markdown("---")
-            st.caption(note)
+            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note}</div>', unsafe_allow_html=True)
 
         # Debug panel
         render_debug_panel(checks)
