@@ -593,33 +593,27 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
                                                    "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
                                                    "Stacked Bar Chart"]:
-                # Count total number of bars to determine font size
-                total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
-                                 for trace in fig.data)
-                if total_bars <= 8:
+                # Font size based on bars per x-axis position (legend groups), not total bars
+                n_lg = n_legend_groups if n_legend_groups else 1
+                if n_lg <= 2:
                     text_size = 12
-                elif total_bars <= 16:
+                elif n_lg <= 4:
                     text_size = 10
-                elif total_bars <= 30:
+                elif n_lg <= 8:
                     text_size = 8
                 else:
-                    text_size = None  # Hide labels when too many bars
+                    text_size = None  # Hide labels when too many groups
 
                 if text_size:
-                    if chart_type == "Stacked Bar Chart":
-                        text_pos = "inside"
-                        text_template = "%{y:.0f}%"
-                    elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
-                        text_pos = "auto"
-                        text_template = "%{x:.0f}%"
+                    if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
+                        text_template = "<b>%{x:.0f}%</b>"
                     else:
-                        text_pos = "auto"
-                        text_template = "%{y:.0f}%"
+                        text_template = "<b>%{y:.0f}%</b>"
 
                     fig.update_traces(
                         texttemplate=text_template,
-                        textposition=text_pos,
-                        textfont_size=text_size,
+                        textposition="inside",
+                        textfont=dict(size=text_size, color="black"),
                     )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
