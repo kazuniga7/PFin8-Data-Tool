@@ -426,7 +426,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     color_discrete_sequence=streamlit_colors,
                 )
             if not n_legend_groups or n_legend_groups <= 10:
-                fig.update_traces(textposition="inside", textinfo="percent+label")
+                fig.update_traces(textposition="inside", textinfo="percent+label", textfont=dict(color="black"))
         elif chart_type == "Line Chart":
             # If single group, don't color by legend
             if n_legend_groups and n_legend_groups <= 1:
