@@ -1612,77 +1612,58 @@ def main():
         excel_buffer.seek(0)
         xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
 
-        # Generate table as PNG using Plotly go.Table
+        # Build HTML table string for facet case (used for display and html2canvas PNG)
+        if facet_groups:
+            row_lbl = pivot_df.index.name or ""
+            _th1 = (
+                f'<th rowspan="2" style="background:#1f4e79;color:white;'
+                f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{row_lbl}</th>'
+            )
+            for facet, cats in facet_groups.items():
+                _th1 += (
+                    f'<th colspan="{len(cats)}" style="background:#1f4e79;color:white;'
+                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
+                )
+            _th1 += (
+                '<th rowspan="2" style="background:#1f4e79;color:white;'
+                'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">Response Count</th>'
+            )
+            _th2 = ""
+            for facet, cats in facet_groups.items():
+                for cat in cats:
+                    _th2 += (
+                        f'<th style="background:#d0e4f7;color:black;'
+                        f'text-align:center !important;padding:6px 10px;border:1px solid #ccc;">{cat}</th>'
+                    )
+            _tbody = ""
+            for i, (idx, row) in enumerate(pivot_df.iterrows()):
+                bg = "#f9f9f9" if i % 2 == 0 else "white"
+                _tbody += f'<tr style="background:{bg}">'
+                _tbody += f'<td style="padding:6px 10px;border:1px solid #eee;font-weight:bold;">{idx}</td>'
+                for facet, cats in facet_groups.items():
+                    for cat in cats:
+                        val = row.get(f"{facet} — {cat}", "")
+                        _tbody += f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">{val}</td>'
+                _tbody += (
+                    f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">'
+                    f'{row.get("Response Count", "")}</td>'
+                )
+                _tbody += "</tr>"
+            table_html_inner = (
+                '<table style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">'
+                f'<thead><tr>{_th1}</tr><tr>{_th2}</tr></thead>'
+                f'<tbody>{_tbody}</tbody>'
+                '</table>'
+            )
+        else:
+            table_html_inner = None
+
+        # Generate table as PNG using Plotly go.Table (non-facet only;
+        # facet tables use client-side html2canvas via st.components)
         table_png_available = False
         table_png_b64 = ""
         try:
-            if facet_groups:
-                # Simulated two-row header for facet tables:
-                # Top header row = facet group names (with blank cells for extra sub-columns)
-                # First cells row = sub-column names, styled as a second header
-                row_lbl = pivot_df.index.name or ""
-                top_header = [row_lbl]
-                for facet, cats in facet_groups.items():
-                    top_header.append(f"<b>{facet}</b>")
-                    top_header.extend([""] * (len(cats) - 1))
-                top_header.append("<b>Response Count</b>")
-
-                sub_header = [""]
-                for facet, cats in facet_groups.items():
-                    sub_header.extend([f"<b>{cat}</b>" for cat in cats])
-                sub_header.append("")
-
-                data_rows = []
-                for idx, row in pivot_df.iterrows():
-                    dr = [str(idx)]
-                    for facet, cats in facet_groups.items():
-                        for cat in cats:
-                            dr.append(str(row.get(f"{facet} — {cat}", "")))
-                    dr.append(str(row.get("Response Count", "")))
-                    data_rows.append(dr)
-
-                n_data_rows = len(data_rows)
-                n_table_cols = len(top_header)
-                cell_values = []
-                for col_idx in range(n_table_cols):
-                    col_vals = [sub_header[col_idx]]
-                    for dr in data_rows:
-                        col_vals.append(dr[col_idx])
-                    cell_values.append(col_vals)
-
-                fill_colors = [
-                    ["#636EFA"] + ["#f9f9f9" if i % 2 == 0 else "white" for i in range(n_data_rows)]
-                    for _ in range(n_table_cols)
-                ]
-                font_colors = [
-                    ["white"] + ["black"] * n_data_rows
-                    for _ in range(n_table_cols)
-                ]
-
-                table_fig = go.Figure(data=[go.Table(
-                    header=dict(
-                        values=top_header,
-                        fill_color="#1f4e79",
-                        font=dict(color="white", size=12),
-                        align="center",
-                    ),
-                    cells=dict(
-                        values=cell_values,
-                        fill_color=fill_colors,
-                        font=dict(color=font_colors, size=11),
-                        align=["left"] + ["center"] * (n_table_cols - 1),
-                    ),
-                )])
-                max_facet_len = max(len(f) for f in facet_groups)
-                col_width = max(80, max_facet_len * 9)
-                table_fig.update_layout(
-                    title=chart_title,
-                    title_font=dict(size=16),
-                    width=max(900, n_table_cols * col_width),
-                    height=max(400, 120 + (n_data_rows + 1) * 35),
-                    margin=dict(l=10, r=10, t=50, b=10),
-                )
-            else:
+            if not facet_groups:
                 # Non-facet: single header row via go.Table
                 header_vals = [pivot_df.index.name or ""] + list(pivot_df.columns)
                 cell_vals = [[str(v) for v in pivot_df.index]] + [
@@ -1723,80 +1704,75 @@ def main():
         with title_col:
             st.markdown(f"### {chart_title}")
         with dl_col:
-            if table_png_available:
-                download_html = (
-                    f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-                    f'Download: '
-                    f'<a href="data:image/png;base64,{table_png_b64}" download="pfin8_table.png" '
-                    f'style="color:#1f77b4; text-decoration:underline;">PNG</a>'
-                    f' | '
-                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
-                    f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-                    f' | '
-                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
-                    f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
-                    f'</div>'
+            if facet_groups and table_html_inner:
+                # Facet tables: client-side PNG via html2canvas + CSV + Excel
+                import streamlit.components.v1 as components
+                component_html = (
+                    '<!DOCTYPE html><html><head>'
+                    '<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>'
+                    '<style>'
+                    '* { box-sizing: border-box; }'
+                    'body { margin: 0; padding: 0; font-family: sans-serif; overflow: hidden; }'
+                    '#capture { position: absolute; left: -9999px; top: 0;'
+                    ' background: white; padding: 20px; width: max-content; }'
+                    '#capture h3 { color: black; margin: 0 0 12px 0; font-size: 18px; }'
+                    '.dl-bar { text-align: right; padding: 8px 0; font-size: 0.875rem; white-space: nowrap; }'
+                    'a { color: #1f77b4; text-decoration: underline; cursor: pointer; }'
+                    '</style></head><body>'
+                    f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}</div>'
+                    '<div class="dl-bar">Download: '
+                    '<a id="png-btn" href="#">PNG</a> | '
+                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv">CSV</a> | '
+                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx">Excel</a>'
+                    '</div>'
+                    '<script>'
+                    'document.getElementById("png-btn").addEventListener("click", function(e) {'
+                    '  e.preventDefault();'
+                    '  var el = document.getElementById("capture");'
+                    '  html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true })'
+                    '  .then(function(canvas) {'
+                    '    var a = document.createElement("a");'
+                    '    a.href = canvas.toDataURL("image/png");'
+                    '    a.download = "pfin8_table.png";'
+                    '    document.body.appendChild(a); a.click(); document.body.removeChild(a);'
+                    '  });'
+                    '});'
+                    '</script></body></html>'
                 )
+                components.html(component_html, height=40, scrolling=False)
             else:
-                download_html = (
-                    f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-                    f'Download: '
-                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
-                    f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-                    f' | '
-                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
-                    f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
-                    f'</div>'
-                )
-            st.markdown(download_html, unsafe_allow_html=True)
-
-        if facet_groups:
-            # Custom HTML table with grouped two-row headers
-            row_lbl = pivot_df.index.name or ""
-            thead_row1 = (
-                f'<th rowspan="2" style="background:#1f4e79;color:white;text-align:center;'
-                f'padding:8px 12px;border:1px solid #ccc;">{row_lbl}</th>'
-            )
-            for facet, cats in facet_groups.items():
-                thead_row1 += (
-                    f'<th colspan="{len(cats)}" style="background:#1f4e79;color:white;'
-                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
-                )
-            thead_row1 += (
-                '<th rowspan="2" style="background:#1f4e79;color:white;text-align:center;'
-                'padding:8px 12px;border:1px solid #ccc;">Response Count</th>'
-            )
-            thead_row2 = ""
-            for facet, cats in facet_groups.items():
-                for cat in cats:
-                    thead_row2 += (
-                        f'<th style="background:#d0e4f7;color:black;text-align:center;'
-                        f'padding:6px 10px;border:1px solid #ccc;">{cat}</th>'
+                if table_png_available:
+                    download_html = (
+                        f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                        f'Download: '
+                        f'<a href="data:image/png;base64,{table_png_b64}" download="pfin8_table.png" '
+                        f'style="color:#1f77b4; text-decoration:underline;">PNG</a>'
+                        f' | '
+                        f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
+                        f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+                        f' | '
+                        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
+                        f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
+                        f'</div>'
                     )
-            tbody = ""
-            for i, (idx, row) in enumerate(pivot_df.iterrows()):
-                bg = "#f9f9f9" if i % 2 == 0 else "white"
-                tbody += f'<tr style="background:{bg}">'
-                tbody += (
-                    f'<td style="padding:6px 10px;border:1px solid #eee;font-weight:bold;">{idx}</td>'
-                )
-                for facet, cats in facet_groups.items():
-                    for cat in cats:
-                        val = row.get(f"{facet} — {cat}", "")
-                        tbody += f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">{val}</td>'
-                tbody += (
-                    f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">'
-                    f'{row.get("Response Count", "")}</td>'
-                )
-                tbody += "</tr>"
-            table_html = (
-                '<div style="overflow-x:auto;font-size:0.85rem;">'
-                '<table style="border-collapse:collapse;width:100%;">'
-                f"<thead><tr>{thead_row1}</tr><tr>{thead_row2}</tr></thead>"
-                f"<tbody>{tbody}</tbody>"
-                "</table></div>"
+                else:
+                    download_html = (
+                        f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+                        f'Download: '
+                        f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
+                        f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+                        f' | '
+                        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
+                        f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
+                        f'</div>'
+                    )
+                st.markdown(download_html, unsafe_allow_html=True)
+
+        if facet_groups and table_html_inner:
+            st.markdown(
+                f'<div style="overflow-x:auto;font-size:0.85rem;">{table_html_inner}</div>',
+                unsafe_allow_html=True,
             )
-            st.markdown(table_html, unsafe_allow_html=True)
         else:
             st.table(pivot_df)
 
