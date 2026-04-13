@@ -767,6 +767,9 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] details {
     box-shadow: none !important;
     background: transparent !important;
 }
+section[data-testid="stSidebar"] [data-testid="stExpander"]:first-of-type {
+    margin-top: 0.75rem !important;
+}
 section[data-testid="stSidebar"] [data-testid="stExpander"] details summary {
     border-radius: 0 !important;
     padding: 0.4rem 0 !important;
