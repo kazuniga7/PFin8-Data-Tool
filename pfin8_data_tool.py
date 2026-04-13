@@ -425,7 +425,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     title=title, labels=label_map,
                     color_discrete_sequence=streamlit_colors,
                 )
-            fig.update_traces(textposition="inside", textinfo="percent+label")
+            if not n_legend_groups or n_legend_groups <= 10:
+                fig.update_traces(textposition="inside", textinfo="percent+label")
         elif chart_type == "Line Chart":
             # If single group, don't color by legend
             if n_legend_groups and n_legend_groups <= 1:
@@ -590,9 +591,16 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
             # Add percentage labels on bars
-            if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
-                                                   "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
-                                                   "Stacked Bar Chart"]:
+            if show_pct_labels and chart_type == "Stacked Bar Chart":
+                # For stacked bars, threshold is segments per bar (n_legend_groups)
+                if not n_legend_groups or n_legend_groups <= 10:
+                    fig.update_traces(
+                        texttemplate="<b>%{y:.0f}%</b>",
+                        textposition="inside",
+                        insidetextfont=dict(color="black"),
+                    )
+            elif show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
+                                                     "Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
                 if total_bars <= 70:
