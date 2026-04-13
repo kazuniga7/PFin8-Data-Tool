@@ -772,7 +772,6 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] details summary {
     border-radius: 0 !important;
     padding: 0.4rem 0 !important;
     border-top: 1px solid rgba(49, 51, 63, 0.2) !important;
-    border-bottom: 1px solid rgba(49, 51, 63, 0.2) !important;
 }
 section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
