@@ -777,33 +777,6 @@ section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
     border: none !important;
 }
-/* Always show sidebar scrollbar so users know more content exists */
-section[data-testid="stSidebar"],
-section[data-testid="stSidebar"] > div,
-section[data-testid="stSidebar"] > div:first-child {
-    overflow-y: scroll !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(49, 51, 63, 0.35) rgba(49, 51, 63, 0.08) !important;
-}
-section[data-testid="stSidebar"]::-webkit-scrollbar,
-section[data-testid="stSidebar"] > div::-webkit-scrollbar,
-section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
-    width: 8px !important;
-    -webkit-appearance: none !important;
-}
-section[data-testid="stSidebar"]::-webkit-scrollbar-track,
-section[data-testid="stSidebar"] > div::-webkit-scrollbar-track,
-section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-track {
-    background: rgba(49, 51, 63, 0.08) !important;
-    border-radius: 4px !important;
-}
-section[data-testid="stSidebar"]::-webkit-scrollbar-thumb,
-section[data-testid="stSidebar"] > div::-webkit-scrollbar-thumb,
-section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
-    background: rgba(49, 51, 63, 0.35) !important;
-    border-radius: 4px !important;
-    min-height: 40px !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1487,6 +1460,51 @@ def main():
 
     # Render sidebar and get config
     config = render_sidebar(df_years, df_genpop)
+
+    # Inject JS to make sidebar scrollbar always visible.
+    # Runs in a hidden iframe; uses window.parent to reach the real page DOM,
+    # finds whichever sidebar child element actually overflows, and injects a
+    # persistent <style> tag so the scrollbar track is always shown.
+    import streamlit.components.v1 as _components
+    _components.html("""
+<script>
+(function() {
+    function apply() {
+        var doc = window.parent.document;
+        var sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+        if (!sidebar) return;
+
+        // Inject a persistent <style> into the parent page head
+        var styleId = 'pfin8-sidebar-scrollbar';
+        if (!doc.getElementById(styleId)) {
+            var s = doc.createElement('style');
+            s.id = styleId;
+            s.textContent = [
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar { width: 8px !important; -webkit-appearance: none !important; }',
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar-track { background: rgba(49,51,63,0.1) !important; border-radius: 4px !important; }',
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar-thumb { background: rgba(49,51,63,0.4) !important; border-radius: 4px !important; min-height: 40px !important; }'
+            ].join('\\n');
+            doc.head.appendChild(s);
+        }
+
+        // Find the overflowing child and force overflow-y: scroll
+        var els = sidebar.querySelectorAll('*');
+        for (var i = 0; i < els.length; i++) {
+            var cs = window.parent.getComputedStyle(els[i]);
+            if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') {
+                els[i].style.setProperty('overflow-y', 'scroll', 'important');
+                break;
+            }
+        }
+    }
+
+    // Run immediately, then retry after Streamlit finishes rendering
+    apply();
+    setTimeout(apply, 500);
+    setTimeout(apply, 1500);
+})();
+</script>
+""", height=0)
 
     # Main content
     st.title("P-Fin 8 Data Exploration Tool")
