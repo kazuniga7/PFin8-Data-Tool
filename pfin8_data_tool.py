@@ -1480,9 +1480,10 @@ def main():
             var s = doc.createElement('style');
             s.id = styleId;
             s.textContent = [
-                'section[data-testid="stSidebar"] *::-webkit-scrollbar { width: 8px !important; -webkit-appearance: none !important; }',
-                'section[data-testid="stSidebar"] *::-webkit-scrollbar-track { background: rgba(49,51,63,0.1) !important; border-radius: 4px !important; }',
-                'section[data-testid="stSidebar"] *::-webkit-scrollbar-thumb { background: rgba(49,51,63,0.4) !important; border-radius: 4px !important; min-height: 40px !important; }'
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar { width: 8px !important; -webkit-appearance: none !important; display: block !important; }',
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar-track { background: rgba(49,51,63,0.1) !important; border-radius: 4px !important; opacity: 1 !important; }',
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar-thumb { background: rgba(49,51,63,0.4) !important; border-radius: 4px !important; min-height: 40px !important; opacity: 1 !important; transition: none !important; -webkit-transition: none !important; }',
+                'section[data-testid="stSidebar"] *::-webkit-scrollbar-thumb:window-inactive { background: rgba(49,51,63,0.4) !important; opacity: 1 !important; }'
             ].join('\\n');
             doc.head.appendChild(s);
         }
