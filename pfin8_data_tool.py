@@ -457,7 +457,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                                     marker=dict(colors=colors),
                                     showlegend=first_trace,
                                     name="",
-                                    textinfo="percent+label" if show_labels else "none",
+                                    textinfo="none",
                                     textfont=dict(color="black"),
                                 ),
                                 row=r + 1, col=c + 1,
