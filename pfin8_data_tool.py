@@ -1652,7 +1652,9 @@ def main():
         # Display note
         if note:
             st.markdown("---")
-            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note}</div>', unsafe_allow_html=True)
+            import re
+            note_html = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note)
+            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note_html}</div>', unsafe_allow_html=True)
 
         # Debug panel
         render_debug_panel(checks)
@@ -1704,7 +1706,9 @@ def main():
         # Display note
         if note:
             st.markdown("---")
-            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note}</div>', unsafe_allow_html=True)
+            import re
+            note_html = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note)
+            st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note_html}</div>', unsafe_allow_html=True)
 
         # Debug panel
         render_debug_panel(checks)
