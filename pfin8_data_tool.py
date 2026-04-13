@@ -1639,7 +1639,7 @@ def main():
         if facet_groups:
             # Excel with merged group headers via openpyxl
             from openpyxl import Workbook as _Workbook
-            from openpyxl.styles import Font as _Font, PatternFill as _Fill, Alignment as _Align
+            from openpyxl.styles import Font as _Font, PatternFill as _Fill, Alignment as _Align, Border as _Border, Side as _Side
             from openpyxl.utils import get_column_letter as _gcl
             _wb = _Workbook()
             _ws = _wb.active
@@ -1648,10 +1648,38 @@ def main():
             _sub_fill = _Fill("solid", fgColor="D0E4F7")
             _sub_font = _Font(bold=True)
             _ctr = _Align(horizontal="center", vertical="center", wrap_text=True)
+            _grp_side = _Side(style="thin", color="AAAAAA")
+            _no_side = _Side(style=None)
+
+            def _grp_border(is_first, is_last):
+                """Light gray left/right border on outermost cells of a group."""
+                return _Border(
+                    left=_grp_side if is_first else _no_side,
+                    right=_grp_side if is_last else _no_side,
+                )
+
+            # Build a mapping: column index -> (is_first_in_group, is_last_in_group)
+            # so we can apply borders uniformly across header and data rows.
+            _grp_border_map = {}  # col_index (1-based) -> border object
+            _ci = 1
+            # Index col: right border acts as left boundary of first group
+            _grp_border_map[_ci] = _Border(right=_grp_side)
+            _ci += 1
+            _facet_list = list(facet_groups.items())
+            for _fi, (_facet, _cats) in enumerate(_facet_list):
+                for _ki, _cat in enumerate(_cats):
+                    _is_first = (_ki == 0)
+                    _is_last = (_ki == len(_cats) - 1)
+                    _grp_border_map[_ci] = _grp_border(_is_first, _is_last)
+                    _ci += 1
+            # Response Count col: left border acts as right boundary of last group
+            _grp_border_map[_ci] = _Border(left=_grp_side)
+
             # Index column spanning rows 1–2
             _ci = 1
             _c = _ws.cell(row=1, column=_ci, value=pivot_df.index.name or "")
             _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+            _c.border = _grp_border_map.get(_ci, _Border())
             _ws.merge_cells(start_row=1, start_column=_ci, end_row=2, end_column=_ci)
             _ci += 1
             # Group headers (merged across categories) + category sub-headers
@@ -1659,31 +1687,38 @@ def main():
                 _start = _ci
                 _c = _ws.cell(row=1, column=_ci, value=_facet)
                 _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+                _c.border = _grp_border_map.get(_ci, _Border())
                 if len(_cats) > 1:
                     _ws.merge_cells(start_row=1, start_column=_start, end_row=1, end_column=_start + len(_cats) - 1)
                 for _cat in _cats:
                     _c2 = _ws.cell(row=2, column=_ci, value=_cat)
                     _c2.fill, _c2.font, _c2.alignment = _sub_fill, _sub_font, _ctr
+                    _c2.border = _grp_border_map.get(_ci, _Border())
                     _ci += 1
             # Response Count spanning rows 1–2
             _c = _ws.cell(row=1, column=_ci, value="Response Count")
             _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+            _c.border = _grp_border_map.get(_ci, _Border())
             _ws.merge_cells(start_row=1, start_column=_ci, end_row=2, end_column=_ci)
             # Data rows
+            _n_data_rows = len(pivot_df)
             for _rn, (_idx, _row) in enumerate(pivot_df.iterrows(), start=3):
                 _bg = "F9F9F9" if (_rn - 3) % 2 == 0 else "FFFFFF"
                 _rf = _Fill("solid", fgColor=_bg)
                 _ci2 = 1
                 _c = _ws.cell(row=_rn, column=_ci2, value=_idx)
                 _c.font, _c.fill = _Font(bold=True), _rf
+                _c.border = _grp_border_map.get(_ci2, _Border())
                 _ci2 += 1
                 for _facet, _cats in facet_groups.items():
                     for _cat in _cats:
                         _c = _ws.cell(row=_rn, column=_ci2, value=_row.get(f"{_facet} — {_cat}", ""))
                         _c.alignment, _c.fill = _Align(horizontal="center"), _rf
+                        _c.border = _grp_border_map.get(_ci2, _Border())
                         _ci2 += 1
                 _c = _ws.cell(row=_rn, column=_ci2, value=_row.get("Response Count", ""))
                 _c.alignment, _c.fill = _Align(horizontal="center"), _rf
+                _c.border = _grp_border_map.get(_ci2, _Border())
             # Auto-width columns
             for _col in _ws.columns:
                 _ml = max((len(str(_cell.value)) for _cell in _col if _cell.value), default=6)
