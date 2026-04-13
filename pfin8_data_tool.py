@@ -1604,12 +1604,99 @@ def main():
         import base64
         from io import BytesIO
 
-        csv_data = pivot_df.to_csv(index=True)
+        if facet_groups:
+            # Two-row CSV: row 1 = group names (with blanks for extra cols), row 2 = category names
+            import csv as _csv
+            import io as _io
+            _csv_buf = _io.StringIO()
+            _writer = _csv.writer(_csv_buf)
+            # Header row 1
+            _r1 = [pivot_df.index.name or ""]
+            for _facet, _cats in facet_groups.items():
+                _r1.append(_facet)
+                _r1.extend([""] * (len(_cats) - 1))
+            _r1.append("Response Count")
+            _writer.writerow(_r1)
+            # Header row 2
+            _r2 = [""]
+            for _facet, _cats in facet_groups.items():
+                _r2.extend(_cats)
+            _r2.append("")
+            _writer.writerow(_r2)
+            # Data rows
+            for _idx, _row in pivot_df.iterrows():
+                _dr = [_idx]
+                for _facet, _cats in facet_groups.items():
+                    for _cat in _cats:
+                        _dr.append(_row.get(f"{_facet} — {_cat}", ""))
+                _dr.append(_row.get("Response Count", ""))
+                _writer.writerow(_dr)
+            csv_data = _csv_buf.getvalue()
+        else:
+            csv_data = pivot_df.to_csv(index=True)
         csv_b64 = base64.b64encode(csv_data.encode()).decode()
 
-        excel_buffer = BytesIO()
-        pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
-        excel_buffer.seek(0)
+        if facet_groups:
+            # Excel with merged group headers via openpyxl
+            from openpyxl import Workbook as _Workbook
+            from openpyxl.styles import Font as _Font, PatternFill as _Fill, Alignment as _Align
+            from openpyxl.utils import get_column_letter as _gcl
+            _wb = _Workbook()
+            _ws = _wb.active
+            _hdr_fill = _Fill("solid", fgColor="1F4E79")
+            _hdr_font = _Font(color="FFFFFF", bold=True)
+            _sub_fill = _Fill("solid", fgColor="D0E4F7")
+            _sub_font = _Font(bold=True)
+            _ctr = _Align(horizontal="center", vertical="center", wrap_text=True)
+            # Index column spanning rows 1–2
+            _ci = 1
+            _c = _ws.cell(row=1, column=_ci, value=pivot_df.index.name or "")
+            _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+            _ws.merge_cells(start_row=1, start_column=_ci, end_row=2, end_column=_ci)
+            _ci += 1
+            # Group headers (merged across categories) + category sub-headers
+            for _facet, _cats in facet_groups.items():
+                _start = _ci
+                _c = _ws.cell(row=1, column=_ci, value=_facet)
+                _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+                if len(_cats) > 1:
+                    _ws.merge_cells(start_row=1, start_column=_start, end_row=1, end_column=_start + len(_cats) - 1)
+                for _cat in _cats:
+                    _c2 = _ws.cell(row=2, column=_ci, value=_cat)
+                    _c2.fill, _c2.font, _c2.alignment = _sub_fill, _sub_font, _ctr
+                    _ci += 1
+            # Response Count spanning rows 1–2
+            _c = _ws.cell(row=1, column=_ci, value="Response Count")
+            _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
+            _ws.merge_cells(start_row=1, start_column=_ci, end_row=2, end_column=_ci)
+            # Data rows
+            for _rn, (_idx, _row) in enumerate(pivot_df.iterrows(), start=3):
+                _bg = "F9F9F9" if (_rn - 3) % 2 == 0 else "FFFFFF"
+                _rf = _Fill("solid", fgColor=_bg)
+                _ci2 = 1
+                _c = _ws.cell(row=_rn, column=_ci2, value=_idx)
+                _c.font, _c.fill = _Font(bold=True), _rf
+                _ci2 += 1
+                for _facet, _cats in facet_groups.items():
+                    for _cat in _cats:
+                        _c = _ws.cell(row=_rn, column=_ci2, value=_row.get(f"{_facet} — {_cat}", ""))
+                        _c.alignment, _c.fill = _Align(horizontal="center"), _rf
+                        _ci2 += 1
+                _c = _ws.cell(row=_rn, column=_ci2, value=_row.get("Response Count", ""))
+                _c.alignment, _c.fill = _Align(horizontal="center"), _rf
+            # Auto-width columns
+            for _col in _ws.columns:
+                _ml = max((len(str(_cell.value)) for _cell in _col if _cell.value), default=6)
+                _ws.column_dimensions[_gcl(_col[0].column)].width = min(30, _ml + 3)
+            _ws.row_dimensions[1].height = 30
+            _ws.row_dimensions[2].height = 20
+            excel_buffer = BytesIO()
+            _wb.save(excel_buffer)
+            excel_buffer.seek(0)
+        else:
+            excel_buffer = BytesIO()
+            pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
+            excel_buffer.seek(0)
         xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
 
         # Build HTML table string for facet case (used for display and html2canvas PNG)
