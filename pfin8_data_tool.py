@@ -403,73 +403,17 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         facet_dims.insert(0, "x")
 
             if len(facet_dims) >= 2:
-                # 2D grid of pies: rows = facet_dims[0], cols = facet_dims[1]
-                # Use manual domain placement to avoid blank space from make_subplots
-                row_dim = facet_dims[0]
-                col_dim = facet_dims[1]
-
-                if category_orders and row_dim in category_orders:
-                    row_vals = [v for v in category_orders[row_dim] if v in chart_data[row_dim].values]
-                else:
-                    row_vals = sorted(chart_data[row_dim].unique(), key=str)
-
-                if category_orders and col_dim in category_orders:
-                    col_vals = [v for v in category_orders[col_dim] if v in chart_data[col_dim].values]
-                else:
-                    col_vals = sorted(chart_data[col_dim].unique(), key=str)
-
-                n_rows_grid = len(row_vals)
-                n_cols_grid = len(col_vals)
-
-                if category_orders and slice_col in category_orders:
-                    slice_order = [v for v in category_orders[slice_col] if v in chart_data[slice_col].values]
-                else:
-                    slice_order = list(chart_data[slice_col].unique())
-                color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(slice_order)}
-
-                fig = make_subplots(
-                    rows=n_rows_grid, cols=n_cols_grid,
-                    specs=[[{"type": "pie"}] * n_cols_grid for _ in range(n_rows_grid)],
-                    row_titles=[str(v) for v in row_vals],
-                    column_titles=[str(v) for v in col_vals],
-                    vertical_spacing=0,
-                    horizontal_spacing=0,
-                )
-
-                first_trace = True
-                for r, row_val in enumerate(row_vals):
-                    for c, col_val in enumerate(col_vals):
-                        subset = chart_data[
-                            (chart_data[row_dim].astype(str) == str(row_val)) &
-                            (chart_data[col_dim].astype(str) == str(col_val))
-                        ]
-                        if len(subset) > 0:
-                            ordered = pd.DataFrame({slice_col: [v for v in slice_order if v in subset[slice_col].values]})
-                            ordered = ordered.merge(subset[[slice_col, "percentage"]], on=slice_col, how="left")
-                            labels = ordered[slice_col].tolist()
-                            values = ordered["percentage"].tolist()
-                            colors = [color_map.get(l, "#cccccc") for l in labels]
-                            show_labels = not n_legend_groups or n_legend_groups <= 10
-                            fig.add_trace(
-                                go.Pie(
-                                    labels=labels,
-                                    values=values,
-                                    marker=dict(colors=colors),
-                                    showlegend=first_trace,
-                                    name="",
-                                    textinfo="none",
-                                    textfont=dict(color="black"),
-                                ),
-                                row=r + 1, col=c + 1,
-                            )
-                            first_trace = False
-
-                fig.update_layout(
-                    title=title,
-                    height=max(300, int(n_rows_grid * 900 / n_cols_grid)),
-                    font=dict(size=12, color="black"),
-                    title_font=dict(size=16, color="black"),
-                    legend=dict(font=dict(color="black"), title_font=dict(color="black")),
+                # Combined facet label with safe row spacing to avoid Plotly error
+                chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
+                n_pie_rows = -(-len(chart_data["_pie_facet"].unique()) // 4)  # ceil(total / 4)
+                safe_spacing = min(0.05, 1 / max(n_pie_rows - 1, 1)) if n_pie_rows > 1 else 0.05
+                fig = px.pie(
+                    chart_data, values="percentage", names=slice_col,
+                    title=title, labels=label_map,
+                    color_discrete_sequence=streamlit_colors,
+                    facet_col="_pie_facet",
+                    facet_col_wrap=4,
+                    facet_row_spacing=safe_spacing,
                 )
             elif len(facet_dims) == 1:
                 fig = px.pie(
