@@ -593,13 +593,10 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
                                                    "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
                                                    "Stacked Bar Chart"]:
-                # Hide labels when bars per panel exceeds threshold
-                # For faceted charts, evaluate threshold per panel not across all panels
+                # Hide labels when total bars exceeds threshold
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
-                n_panels = chart_data[facet_col].nunique() if facet_col and facet_col in chart_data.columns else 1
-                bars_per_panel = total_bars / n_panels
-                if bars_per_panel <= 70:
+                if total_bars <= 70:
                     if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
                         text_template = "<b>%{x:.0f}%</b>"
                     else:
