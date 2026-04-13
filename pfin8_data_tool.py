@@ -772,9 +772,6 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] details summary {
     padding: 0.4rem 0 !important;
     border-top: 1px solid rgba(49, 51, 63, 0.2) !important;
 }
-section[data-testid="stSidebar"] [data-testid="stExpander"]:first-of-type details summary {
-    border-top: none !important;
-}
 section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
     border: none !important;
