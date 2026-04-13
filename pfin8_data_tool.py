@@ -778,20 +778,31 @@ section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     border: none !important;
 }
 /* Always show sidebar scrollbar so users know more content exists */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
 section[data-testid="stSidebar"] > div:first-child {
     overflow-y: scroll !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(49, 51, 63, 0.35) rgba(49, 51, 63, 0.08) !important;
 }
+section[data-testid="stSidebar"]::-webkit-scrollbar,
+section[data-testid="stSidebar"] > div::-webkit-scrollbar,
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
-    width: 8px;
+    width: 8px !important;
+    -webkit-appearance: none !important;
 }
+section[data-testid="stSidebar"]::-webkit-scrollbar-track,
+section[data-testid="stSidebar"] > div::-webkit-scrollbar-track,
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-track {
-    background: rgba(49, 51, 63, 0.08);
-    border-radius: 4px;
+    background: rgba(49, 51, 63, 0.08) !important;
+    border-radius: 4px !important;
 }
+section[data-testid="stSidebar"]::-webkit-scrollbar-thumb,
+section[data-testid="stSidebar"] > div::-webkit-scrollbar-thumb,
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
-    background: rgba(49, 51, 63, 0.35);
-    border-radius: 4px;
-    min-height: 40px;
+    background: rgba(49, 51, 63, 0.35) !important;
+    border-radius: 4px !important;
+    min-height: 40px !important;
 }
 </style>
 """, unsafe_allow_html=True)
