@@ -427,15 +427,16 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     slice_order = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(slice_order)}
 
-                col_w = 1.0 / n_cols_grid
-                title_space = 0.05  # reserve top 5% for column titles
-                row_h = (1.0 - title_space) / n_rows_grid
-                gap = 0.005
+                fig = make_subplots(
+                    rows=n_rows_grid, cols=n_cols_grid,
+                    specs=[[{"type": "pie"}] * n_cols_grid for _ in range(n_rows_grid)],
+                    row_titles=[str(v) for v in row_vals],
+                    column_titles=[str(v) for v in col_vals],
+                    vertical_spacing=0,
+                    horizontal_spacing=0,
+                )
 
-                fig = go.Figure()
-                annotations = []
                 first_trace = True
-
                 for r, row_val in enumerate(row_vals):
                     for c, col_val in enumerate(col_vals):
                         subset = chart_data[
@@ -449,44 +450,23 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             values = ordered["percentage"].tolist()
                             colors = [color_map.get(l, "#cccccc") for l in labels]
                             show_labels = not n_legend_groups or n_legend_groups <= 10
-                            x0 = c * col_w + gap
-                            x1 = (c + 1) * col_w - gap
-                            y0 = (1.0 - title_space) - (r + 1) * row_h + gap
-                            y1 = (1.0 - title_space) - r * row_h - gap
-                            fig.add_trace(go.Pie(
-                                labels=labels,
-                                values=values,
-                                marker=dict(colors=colors),
-                                domain=dict(x=[x0, x1], y=[y0, y1]),
-                                showlegend=first_trace,
-                                name="",
-                                textinfo="percent+label" if show_labels else "none",
-                                textfont=dict(color="black"),
-                            ))
+                            fig.add_trace(
+                                go.Pie(
+                                    labels=labels,
+                                    values=values,
+                                    marker=dict(colors=colors),
+                                    showlegend=first_trace,
+                                    name="",
+                                    textinfo="percent+label" if show_labels else "none",
+                                    textfont=dict(color="black"),
+                                ),
+                                row=r + 1, col=c + 1,
+                            )
                             first_trace = False
-
-                    # Row title annotation (right side)
-                    y_mid = (1.0 - title_space) - (r + 0.5) * row_h
-                    annotations.append(dict(
-                        x=1.01, y=y_mid,
-                        xref="paper", yref="paper",
-                        text=str(row_val), showarrow=False,
-                        xanchor="left", font=dict(color="black", size=11),
-                    ))
-
-                # Column title annotations (inside top title_space band)
-                for c, col_val in enumerate(col_vals):
-                    annotations.append(dict(
-                        x=(c + 0.5) * col_w, y=1.0 - title_space / 2,
-                        xref="paper", yref="paper",
-                        text=str(col_val), showarrow=False,
-                        yanchor="middle", font=dict(color="black", size=11),
-                    ))
 
                 fig.update_layout(
                     title=title,
-                    annotations=annotations,
-                    height=max(400, n_rows_grid * 150),
+                    height=max(400, n_rows_grid * 250),
                     font=dict(size=12, color="black"),
                     title_font=dict(size=16, color="black"),
                     legend=dict(font=dict(color="black"), title_font=dict(color="black")),
