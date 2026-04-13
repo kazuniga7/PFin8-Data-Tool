@@ -1699,6 +1699,8 @@ def main():
                     _c2.border = _Border(
                         left=_grp_b.left if _grp_b.left and _grp_b.left.style else _grp_side,
                         right=_grp_b.right if _grp_b.right and _grp_b.right.style else _grp_side,
+                        top=_grp_side,
+                        bottom=_grp_side,
                     )
                     _ci += 1
             # Response Count spanning rows 1–2
