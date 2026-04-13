@@ -602,7 +602,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 elif n_lg <= 8:
                     text_size = 8
                 else:
-                    text_size = None  # Hide labels when too many groups
+                    text_size = 7
 
                 if text_size:
                     if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
