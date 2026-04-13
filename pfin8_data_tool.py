@@ -593,19 +593,23 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
                                                    "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
                                                    "Stacked Bar Chart"]:
-                # Tiered font size based on total bars; hide when over threshold
+                # Hide labels when total bars exceeds threshold
+                # Font size based on bars per panel (so faceted charts size correctly)
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
-                if total_bars <= 8:
-                    text_size = 60
-                elif total_bars <= 16:
-                    text_size = 50
-                elif total_bars <= 30:
-                    text_size = 40
-                elif total_bars <= 50:
-                    text_size = 32
-                elif total_bars <= 70:
-                    text_size = 26
+                n_panels = chart_data[facet_col].nunique() if facet_col and facet_col in chart_data.columns else 1
+                bars_per_panel = total_bars / n_panels
+                if total_bars <= 70:
+                    if bars_per_panel <= 8:
+                        text_size = 60
+                    elif bars_per_panel <= 16:
+                        text_size = 50
+                    elif bars_per_panel <= 30:
+                        text_size = 40
+                    elif bars_per_panel <= 50:
+                        text_size = 32
+                    else:
+                        text_size = 26
                 else:
                     text_size = None
 
