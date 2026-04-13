@@ -426,8 +426,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     slice_order = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(slice_order)}
 
-                v_spacing = min(0.04, 0.8 / max(n_rows_grid - 1, 1))
-                h_spacing = min(0.04, 0.8 / max(n_cols_grid - 1, 1))
+                v_spacing = min(0.02, 0.5 / max(n_rows_grid - 1, 1))
+                h_spacing = min(0.02, 0.5 / max(n_cols_grid - 1, 1))
 
                 fig = make_subplots(
                     rows=n_rows_grid, cols=n_cols_grid,
@@ -468,7 +468,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
                 fig.update_layout(
                     title=title,
-                    height=max(400, n_rows_grid * 220),
+                    height=max(300, n_rows_grid * 120),
                     font=dict(size=12, color="black"),
                     title_font=dict(size=16, color="black"),
                     legend=dict(font=dict(color="black"), title_font=dict(color="black")),
