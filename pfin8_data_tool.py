@@ -594,19 +594,18 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                                                    "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
                                                    "Stacked Bar Chart"]:
                 # Hide labels when total bars exceeds threshold
-                # Font size based on bars per panel (so faceted charts size correctly)
+                # Font size based on n_legend_groups (bars per x position = bar width driver)
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
-                n_panels = chart_data[facet_col].nunique() if facet_col and facet_col in chart_data.columns else 1
-                bars_per_panel = total_bars / n_panels
+                n_lg = n_legend_groups if n_legend_groups else 1
                 if total_bars <= 70:
-                    if bars_per_panel <= 8:
+                    if n_lg <= 2:
                         text_size = 60
-                    elif bars_per_panel <= 16:
+                    elif n_lg <= 4:
                         text_size = 50
-                    elif bars_per_panel <= 30:
+                    elif n_lg <= 8:
                         text_size = 40
-                    elif bars_per_panel <= 50:
+                    elif n_lg <= 16:
                         text_size = 32
                     else:
                         text_size = 26
