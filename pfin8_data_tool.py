@@ -1665,24 +1665,63 @@ def main():
         table_png_b64 = ""
         try:
             if facet_groups and table_html_inner:
-                # Render the HTML table directly to PNG via weasyprint
-                from weasyprint import HTML as WeasyHTML, CSS as WeasyCSS
-                n_data_cols = sum(len(cats) for cats in facet_groups.values())
-                total_cols = 1 + n_data_cols + 1
-                n_data_rows = len(pivot_df)
-                page_w = max(1000, total_cols * 130 + 40)
-                page_h = max(400, (n_data_rows + 3) * 45 + 150)
-                page_css = WeasyCSS(string=f"@page {{ size: {page_w}px {page_h}px; margin: 20px; }}")
-                full_html = (
-                    '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'
-                    '<body style="font-family:sans-serif;">'
-                    f'<h3 style="color:black;margin-bottom:16px;">{chart_title}</h3>'
-                    f'{table_html_inner}'
-                    '</body></html>'
-                )
-                table_png_bytes = WeasyHTML(string=full_html).write_png(stylesheets=[page_css])
-                table_png_b64 = base64.b64encode(table_png_bytes).decode()
-                table_png_available = True
+                # Try weasyprint first (renders HTML exactly as shown on screen)
+                _weasy_ok = False
+                try:
+                    from weasyprint import HTML as WeasyHTML, CSS as WeasyCSS
+                    n_data_cols = sum(len(cats) for cats in facet_groups.values())
+                    total_cols = 1 + n_data_cols + 1
+                    n_data_rows = len(pivot_df)
+                    page_w = max(1000, total_cols * 130 + 40)
+                    page_h = max(400, (n_data_rows + 3) * 45 + 150)
+                    page_css = WeasyCSS(string=f"@page {{ size: {page_w}px {page_h}px; margin: 20px; }}")
+                    full_html = (
+                        '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'
+                        '<body style="font-family:sans-serif;">'
+                        f'<h3 style="color:black;margin-bottom:16px;">{chart_title}</h3>'
+                        f'{table_html_inner}'
+                        '</body></html>'
+                    )
+                    table_png_bytes = WeasyHTML(string=full_html).write_png(stylesheets=[page_css])
+                    table_png_b64 = base64.b64encode(table_png_bytes).decode()
+                    table_png_available = True
+                    _weasy_ok = True
+                except Exception:
+                    pass
+                if not _weasy_ok:
+                    # Fallback: go.Table with simulated two-row header
+                    top_header = [pivot_df.index.name or ""]
+                    for facet, cats in facet_groups.items():
+                        top_header.append(f"<b>{facet}</b>")
+                        top_header.extend([""] * (len(cats) - 1))
+                    top_header.append("<b>Response Count</b>")
+                    sub_header = [""]
+                    for facet, cats in facet_groups.items():
+                        sub_header.extend([f"<b>{cat}</b>" for cat in cats])
+                    sub_header.append("")
+                    data_rows = []
+                    for idx, row in pivot_df.iterrows():
+                        dr = [str(idx)]
+                        for facet, cats in facet_groups.items():
+                            for cat in cats:
+                                dr.append(str(row.get(f"{facet} — {cat}", "")))
+                        dr.append(str(row.get("Response Count", "")))
+                        data_rows.append(dr)
+                    n_dr = len(data_rows)
+                    n_tc = len(top_header)
+                    cell_values = [[sub_header[c]] + [dr[c] for dr in data_rows] for c in range(n_tc)]
+                    fill_colors = [["#636EFA"] + ["#f9f9f9" if i % 2 == 0 else "white" for i in range(n_dr)] for _ in range(n_tc)]
+                    font_colors = [["white"] + ["black"] * n_dr for _ in range(n_tc)]
+                    table_fig = go.Figure(data=[go.Table(
+                        header=dict(values=top_header, fill_color="#1f4e79", font=dict(color="white", size=12), align="center"),
+                        cells=dict(values=cell_values, fill_color=fill_colors, font=dict(color=font_colors, size=11), align=["left"] + ["center"] * (n_tc - 1)),
+                    )])
+                    max_facet_len = max(len(f) for f in facet_groups)
+                    col_width = max(80, max_facet_len * 9)
+                    table_fig.update_layout(title=chart_title, title_font=dict(size=16), width=max(900, n_tc * col_width), height=max(400, 120 + (n_dr + 1) * 35), margin=dict(l=10, r=10, t=50, b=10))
+                    table_png_bytes = table_fig.to_image(format="png", scale=2)
+                    table_png_b64 = base64.b64encode(table_png_bytes).decode()
+                    table_png_available = True
             else:
                 # Non-facet: single header row via go.Table
                 header_vals = [pivot_df.index.name or ""] + list(pivot_df.columns)
