@@ -777,6 +777,20 @@ section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
     border: none !important;
 }
+/* Show scrollbar when hovering over the sidebar */
+section[data-testid="stSidebar"]:hover *::-webkit-scrollbar {
+    width: 8px !important;
+    -webkit-appearance: none !important;
+}
+section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-track {
+    background: rgba(49, 51, 63, 0.1) !important;
+    border-radius: 4px !important;
+}
+section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
+    background: rgba(49, 51, 63, 0.4) !important;
+    border-radius: 4px !important;
+    min-height: 40px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
