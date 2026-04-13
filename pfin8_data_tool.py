@@ -1695,7 +1695,7 @@ def main():
         png_available = False
         png_bytes = None
         try:
-            png_bytes = fig.to_image(format="png", width=1200, height=fig.layout.height or 600, scale=2)
+            png_bytes = fig.to_image(format="png", width=2000, height=fig.layout.height or 600, scale=2)
             png_available = True
         except Exception:
             pass
