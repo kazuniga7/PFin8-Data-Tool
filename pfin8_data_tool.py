@@ -1708,6 +1708,14 @@ def main():
             _c.fill, _c.font, _c.alignment = _hdr_fill, _hdr_font, _ctr
             _c.border = _grp_border_map.get(_ci, _Border())
             _ws.merge_cells(start_row=1, start_column=_ci, end_row=2, end_column=_ci)
+            def _col_border(col_idx):
+                """Gray divider on both sides of every data cell; group edges keep their border."""
+                _grp_b = _grp_border_map.get(col_idx, _Border())
+                return _Border(
+                    left=_grp_b.left if _grp_b.left and _grp_b.left.style else _grp_side,
+                    right=_grp_b.right if _grp_b.right and _grp_b.right.style else _grp_side,
+                )
+
             # Data rows
             _n_data_rows = len(pivot_df)
             for _rn, (_idx, _row) in enumerate(pivot_df.iterrows(), start=3):
@@ -1716,17 +1724,17 @@ def main():
                 _ci2 = 1
                 _c = _ws.cell(row=_rn, column=_ci2, value=_idx)
                 _c.font, _c.fill = _Font(bold=True), _rf
-                _c.border = _grp_border_map.get(_ci2, _Border())
+                _c.border = _col_border(_ci2)
                 _ci2 += 1
                 for _facet, _cats in facet_groups.items():
                     for _cat in _cats:
                         _c = _ws.cell(row=_rn, column=_ci2, value=_row.get(f"{_facet} — {_cat}", ""))
                         _c.alignment, _c.fill = _Align(horizontal="center"), _rf
-                        _c.border = _grp_border_map.get(_ci2, _Border())
+                        _c.border = _col_border(_ci2)
                         _ci2 += 1
                 _c = _ws.cell(row=_rn, column=_ci2, value=_row.get("Response Count", ""))
                 _c.alignment, _c.fill = _Align(horizontal="center"), _rf
-                _c.border = _grp_border_map.get(_ci2, _Border())
+                _c.border = _col_border(_ci2)
             # Auto-width columns
             for _col in _ws.columns:
                 _ml = max((len(str(_cell.value)) for _cell in _col if _cell.value), default=6)
