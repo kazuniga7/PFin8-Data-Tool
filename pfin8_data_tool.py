@@ -758,7 +758,6 @@ def get_category_order(col_name):
 def render_sidebar(df_years, df_genpop):
     with st.sidebar:
         st.title("P-Fin 8 Data Tool")
-        st.markdown("---")
 
         # Remove box styling from expanders so they look like plain divider-separated sections
         st.markdown("""
@@ -772,6 +771,9 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] details summary {
     border-radius: 0 !important;
     padding: 0.4rem 0 !important;
     border-top: 1px solid rgba(49, 51, 63, 0.2) !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"]:first-of-type details summary {
+    border-top: none !important;
 }
 section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
