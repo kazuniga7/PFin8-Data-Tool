@@ -466,7 +466,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
                 fig.update_layout(
                     title=title,
-                    height=max(400, n_rows_grid * 250),
+                    height=max(300, int(n_rows_grid * 900 / n_cols_grid)),
                     font=dict(size=12, color="black"),
                     title_font=dict(size=16, color="black"),
                     legend=dict(font=dict(color="black"), title_font=dict(color="black")),
