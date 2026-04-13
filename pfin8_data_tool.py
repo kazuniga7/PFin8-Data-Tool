@@ -595,7 +595,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 # For stacked bars, threshold is segments per bar (n_legend_groups)
                 if not n_legend_groups or n_legend_groups <= 10:
                     fig.update_traces(
-                        texttemplate="<b>%{y:.0f}%</b>",
+                        texttemplate="%{y:.0f}%",
                         textposition="inside",
                         insidetextfont=dict(color="black"),
                     )
@@ -605,9 +605,9 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                                  for trace in fig.data)
                 if total_bars <= 70:
                     if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
-                        text_template = "<b>%{x:.0f}%</b>"
+                        text_template = "%{x:.0f}%"
                     else:
-                        text_template = "<b>%{y:.0f}%</b>"
+                        text_template = "%{y:.0f}%"
 
                     fig.update_traces(
                         texttemplate=text_template,
