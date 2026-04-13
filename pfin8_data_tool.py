@@ -597,15 +597,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
                 if total_bars <= 8:
-                    text_size = 14
+                    text_size = 18
                 elif total_bars <= 16:
-                    text_size = 12
+                    text_size = 16
                 elif total_bars <= 30:
-                    text_size = 10
+                    text_size = 13
                 elif total_bars <= 50:
-                    text_size = 9
+                    text_size = 11
                 elif total_bars <= 70:
-                    text_size = 8
+                    text_size = 9
                 else:
                     text_size = None
 
