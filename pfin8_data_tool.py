@@ -403,20 +403,45 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         facet_dims.insert(0, "x")
 
             if len(facet_dims) >= 2:
-                # Combined facet label with safe row spacing to avoid Plotly error
+                # Use make_subplots to avoid px.pie's facet_row_spacing constraint
                 chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
-                n_pie_rows = -(-len(chart_data["_pie_facet"].unique()) // 4)  # ceil(total / 4)
-                safe_spacing = min(0.05, 1 / max(n_pie_rows - 1, 1)) if n_pie_rows > 1 else 0.05
-                pie_height = max(600, n_pie_rows * 250)
-                fig = px.pie(
-                    chart_data, values="percentage", names=slice_col,
-                    title=title, labels=label_map,
-                    color_discrete_sequence=streamlit_colors,
-                    facet_col="_pie_facet",
-                    facet_col_wrap=4,
-                    facet_row_spacing=safe_spacing,
-                    height=pie_height,
+                facet_labels = list(chart_data["_pie_facet"].unique())
+                n_facets = len(facet_labels)
+                n_cols = 4
+                n_pie_rows = -(-n_facets // n_cols)
+                # Consistent colors across all pies
+                unique_slices = list(chart_data[slice_col].unique())
+                color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(unique_slices)}
+                # Tight spacing that stays within Plotly's constraint
+                v_spacing = min(0.02, 0.95 / (n_pie_rows - 1)) if n_pie_rows > 1 else 0
+                fig = make_subplots(
+                    rows=n_pie_rows, cols=n_cols,
+                    specs=[[{"type": "pie"}] * n_cols for _ in range(n_pie_rows)],
+                    subplot_titles=facet_labels + [""] * (n_pie_rows * n_cols - n_facets),
+                    vertical_spacing=v_spacing,
+                    horizontal_spacing=0.02,
                 )
+                for i, label in enumerate(facet_labels):
+                    row_idx = i // n_cols + 1
+                    col_idx = i % n_cols + 1
+                    subset = chart_data[chart_data["_pie_facet"] == label]
+                    sub_labels = subset[slice_col].tolist()
+                    sub_colors = [color_map[lbl] for lbl in sub_labels]
+                    fig.add_trace(
+                        go.Pie(
+                            values=subset["percentage"].tolist(),
+                            labels=sub_labels,
+                            name=label,
+                            marker=dict(colors=sub_colors),
+                            textposition="inside",
+                            textinfo="percent+label",
+                            textfont=dict(color="black"),
+                            hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
+                            showlegend=(i == 0),
+                        ),
+                        row=row_idx, col=col_idx,
+                    )
+                fig.update_layout(title_text=title)
             elif len(facet_dims) == 1:
                 fig = px.pie(
                     chart_data, values="percentage", names=slice_col,
