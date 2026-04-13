@@ -542,8 +542,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 fig.update_layout(
                     legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
                     template="plotly_white",
-                    font=dict(size=12),
-                    title_font=dict(size=16),
+                    font=dict(size=12, color="black"),
+                    title_font=dict(size=16, color="black"),
                     height=pie_height,
                 )
                 # Clean up facet titles
@@ -554,8 +554,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     xaxis_title=y_label,
                     legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
                     template="plotly_white",
-                    font=dict(size=12),
-                    title_font=dict(size=16),
+                    font=dict(size=12, color="black"),
+                    title_font=dict(size=16, color="black"),
                     height=800 if facet_col else 500,
                 )
                 fig.update_xaxes(range=[0, 112 if show_pct_labels else 105])
@@ -567,8 +567,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     xaxis_title=x_label,
                     legend_title_text=legend_label if legend_label else (group_label if color_col == "group" else (color_col if color_col else "")),
                     template="plotly_white",
-                    font=dict(size=12),
-                    title_font=dict(size=16),
+                    font=dict(size=12, color="black"),
+                    title_font=dict(size=16, color="black"),
                     height=800 if facet_col else 500,
                 )
                 fig.update_yaxes(range=[0, 112 if show_pct_labels else 105])
