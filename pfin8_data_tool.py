@@ -1760,7 +1760,7 @@ def main():
             for facet, cats in facet_groups.items():
                 thead_row1 += (
                     f'<th colspan="{len(cats)}" style="background:#1f4e79;color:white;'
-                    f'text-align:center;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
+                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
                 )
             thead_row1 += (
                 '<th rowspan="2" style="background:#1f4e79;color:white;text-align:center;'
