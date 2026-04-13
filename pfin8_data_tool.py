@@ -600,15 +600,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 n_lg = n_legend_groups if n_legend_groups else 1
                 if total_bars <= 70:
                     if n_lg <= 2:
-                        text_size = 36
+                        text_size = 32
                     elif n_lg <= 4:
-                        text_size = 30
+                        text_size = 26
                     elif n_lg <= 8:
-                        text_size = 24
+                        text_size = 20
                     elif n_lg <= 16:
-                        text_size = 19
+                        text_size = 15
                     else:
-                        text_size = 16
+                        text_size = 12
                 else:
                     text_size = None
 
