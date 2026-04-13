@@ -618,7 +618,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     fig.update_traces(
                         texttemplate=text_template,
                         textposition="inside",
-                        textfont=dict(size=text_size, color="black"),
+                        insidetextfont=dict(size=text_size, color="black"),
                     )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
