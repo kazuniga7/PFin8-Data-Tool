@@ -1650,7 +1650,8 @@ def main():
                 )
                 _tbody += "</tr>"
             table_html_inner = (
-                '<table style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">'
+                '<style>.pfin8-table thead th { text-align: center !important; }</style>'
+                '<table class="pfin8-table" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">'
                 f'<thead><tr>{_th1}</tr><tr>{_th2}</tr></thead>'
                 f'<tbody>{_tbody}</tbody>'
                 '</table>'
