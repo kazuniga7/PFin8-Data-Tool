@@ -597,32 +597,16 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 # Font size based on n_legend_groups (bars per x position = bar width driver)
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
-                n_lg = n_legend_groups if n_legend_groups else 1
-                if total_bars <= 70:
-                    if n_lg <= 2:
-                        text_size = 32
-                    elif n_lg <= 4:
-                        text_size = 26
-                    elif n_lg <= 8:
-                        text_size = 20
-                    elif n_lg <= 16:
-                        text_size = 15
-                    else:
-                        text_size = 12
+                if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
+                    text_template = "<b>%{x:.0f}%</b>"
                 else:
-                    text_size = None
+                    text_template = "<b>%{y:.0f}%</b>"
 
-                if text_size:
-                    if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
-                        text_template = "<b>%{x:.0f}%</b>"
-                    else:
-                        text_template = "<b>%{y:.0f}%</b>"
-
-                    fig.update_traces(
-                        texttemplate=text_template,
-                        textposition="inside",
-                        insidetextfont=dict(size=text_size, color="black"),
-                    )
+                fig.update_traces(
+                    texttemplate=text_template,
+                    textposition="inside",
+                    insidetextfont=dict(color="black"),
+                )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
         return None
