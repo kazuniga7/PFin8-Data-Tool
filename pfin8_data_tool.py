@@ -760,53 +760,55 @@ def render_sidebar(df_years, df_genpop):
         st.title("P-Fin 8 Data Tool")
         st.markdown("---")
 
-        # Environment selection
-        environment = st.radio(
-            "Exploration Type",
-            ["Over the Years", "Demographics", "Financial Well-Being"],
-            help="Choose how you want to explore the P-Fin 8 data",
-        )
+        # Section 1: Exploration Type
+        with st.expander("Exploration Type", expanded=True):
+            environment = st.radio(
+                "Exploration Type",
+                ["Over the Years", "Demographics", "Financial Well-Being"],
+                help="Choose how you want to explore the P-Fin 8 data",
+                label_visibility="collapsed",
+            )
 
-        st.markdown("---")
+        # Section 2: Analysis Type
+        with st.expander("Analysis Type", expanded=True):
+            analysis_type = st.radio(
+                "Analysis Type",
+                ["Topic Bucket", "Total Correct"],
+                help="Analyze by individual topic questions or total correct score",
+                label_visibility="collapsed",
+            )
 
-        # Analysis type
-        analysis_type = st.radio(
-            "Analysis Type",
-            ["Topic Bucket", "Total Correct"],
-            help="Analyze by individual topic questions or total correct score",
-        )
-
-        st.markdown("---")
-
-        # View mode (only for Topic Bucket)
+        # Section 3: View Mode / Total Correct Range
         view_mode = None
         selected_topics = None
         selected_range = None
 
-        if analysis_type == "Topic Bucket":
-            view_mode = st.radio(
-                "View Mode",
-                ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
-            )
-            all_topics = list(TOPIC_NAMES.keys())
-            selected_topics = st.multiselect(
-                "Select Topics",
-                all_topics,
-                default=all_topics,
-                help="Choose which P-Fin 8 topics to include",
-            )
-            if not selected_topics:
-                st.warning("Please select at least one topic.")
-        else:
-            selected_range = st.slider(
-                "Total Correct Range",
-                min_value=0, max_value=8, value=(0, 8),
-                help="Filter the range of total correct scores",
-            )
+        _sec3_title = "View Mode" if analysis_type == "Topic Bucket" else "Total Correct Range"
+        with st.expander(_sec3_title, expanded=True):
+            if analysis_type == "Topic Bucket":
+                view_mode = st.radio(
+                    "View Mode",
+                    ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
+                    label_visibility="collapsed",
+                )
+                all_topics = list(TOPIC_NAMES.keys())
+                selected_topics = st.multiselect(
+                    "Select Topics",
+                    all_topics,
+                    default=all_topics,
+                    help="Choose which P-Fin 8 topics to include",
+                )
+                if not selected_topics:
+                    st.warning("Please select at least one topic.")
+            else:
+                selected_range = st.slider(
+                    "Total Correct Range",
+                    min_value=0, max_value=8, value=(0, 8),
+                    help="Filter the range of total correct scores",
+                    label_visibility="collapsed",
+                )
 
-        st.markdown("---")
-
-        # Environment-specific filters
+        # Section 4: Environment-specific filters
         analysis_variable = None
         analysis_col = None
         subgroups = None
@@ -814,130 +816,141 @@ def render_sidebar(df_years, df_genpop):
         custom_age_range = None
 
         if environment == "Over the Years":
-            years = sorted(df_years["survey_year"].unique())
-            year_range = st.slider(
-                "Year Range",
-                min_value=int(min(years)), max_value=int(max(years)),
-                value=(int(min(years)), int(max(years))),
-            )
-
+            _sec4_title = "Year Range"
         elif environment == "Demographics":
-            analysis_variable = st.selectbox(
-                "Demographic Variable",
-                list(DEMOGRAPHIC_VARIABLES.keys()),
-            )
-            analysis_col = DEMOGRAPHIC_VARIABLES[analysis_variable]
+            _sec4_title = "Demographic Variable"
+        else:
+            _sec4_title = "Financial Well-Being Variable"
 
-            if analysis_variable == "Age (Custom Range)":
-                min_age = int(df_genpop["reported_age"].min())
-                max_age = int(df_genpop["reported_age"].max())
-
-                num_groups = st.selectbox(
-                    "Number of age groups",
-                    [1, 2, 3, 4, 5, 6, 7, 8],
-                    index=2,
+        with st.expander(_sec4_title, expanded=True):
+            if environment == "Over the Years":
+                years = sorted(df_years["survey_year"].unique())
+                year_range = st.slider(
+                    "Year Range",
+                    min_value=int(min(years)), max_value=int(max(years)),
+                    value=(int(min(years)), int(max(years))),
+                    label_visibility="collapsed",
                 )
 
-                st.markdown("**Define your age groups**")
-                st.caption(f"Min age: {min_age} · Max age: {max_age}")
-                custom_age_groups = []
-                age_errors = []
-
-                for i in range(num_groups):
-                    st.markdown(f"**Group {i+1}:**")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        start = st.number_input(
-                            "Start",
-                            min_value=min_age, max_value=max_age,
-                            value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
-                            key=f"age_start_{i}",
-                        )
-                    with col2:
-                        default_end = min(min_age + (i + 1) * ((max_age - min_age) // num_groups) - 1, max_age)
-                        if i == num_groups - 1:
-                            default_end = max_age
-                        end = st.number_input(
-                            "End",
-                            min_value=min_age, max_value=max_age,
-                            value=default_end,
-                            key=f"age_end_{i}",
-                        )
-
-                    # Validate: end must be >= start
-                    if end < start:
-                        st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
-                        age_errors.append(f"Group {i+1}: end < start")
-
-                    custom_age_groups.append((start, end))
-
-                # Validate: check for overlaps
-                for i in range(len(custom_age_groups)):
-                    for j in range(i + 1, len(custom_age_groups)):
-                        g1_start, g1_end = custom_age_groups[i]
-                        g2_start, g2_end = custom_age_groups[j]
-                        if g1_start <= g2_end and g2_start <= g1_end:
-                            overlap_start = max(g1_start, g2_start)
-                            overlap_end = min(g1_end, g2_end)
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
-                            age_errors.append(f"Groups {i+1} and {j+1} overlap")
-
-                if age_errors:
-                    st.error("Invalid groups — please adjust ranges")
-
-                # Build labels
-                custom_age_labels = []
-                for i, (s, e) in enumerate(custom_age_groups):
-                    if i == len(custom_age_groups) - 1 and e == max_age:
-                        custom_age_labels.append(f"{s}+")
-                    else:
-                        custom_age_labels.append(f"{s}-{e}")
-
-                custom_age_range = {
-                    "groups": custom_age_groups,
-                    "labels": custom_age_labels,
-                    "errors": age_errors,
-                }
-            elif analysis_variable == "Dependent Children Under 18":
-                subgroups = st.multiselect(
-                    "Select Groups",
-                    ["Yes", "No"],
-                    default=["Yes", "No"],
+            elif environment == "Demographics":
+                analysis_variable = st.selectbox(
+                    "Demographic Variable",
+                    list(DEMOGRAPHIC_VARIABLES.keys()),
+                    label_visibility="collapsed",
                 )
-            elif analysis_variable == "Financial Education Course":
-                subgroups = st.multiselect(
-                    "Select Groups",
-                    ["Yes", "No"],
-                    default=["Yes", "No"],
+                analysis_col = DEMOGRAPHIC_VARIABLES[analysis_variable]
+
+                if analysis_variable == "Age (Custom Range)":
+                    min_age = int(df_genpop["reported_age"].min())
+                    max_age = int(df_genpop["reported_age"].max())
+
+                    num_groups = st.selectbox(
+                        "Number of age groups",
+                        [1, 2, 3, 4, 5, 6, 7, 8],
+                        index=2,
+                    )
+
+                    st.markdown("**Define your age groups**")
+                    st.caption(f"Min age: {min_age} · Max age: {max_age}")
+                    custom_age_groups = []
+                    age_errors = []
+
+                    for i in range(num_groups):
+                        st.markdown(f"**Group {i+1}:**")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            start = st.number_input(
+                                "Start",
+                                min_value=min_age, max_value=max_age,
+                                value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
+                                key=f"age_start_{i}",
+                            )
+                        with col2:
+                            default_end = min(min_age + (i + 1) * ((max_age - min_age) // num_groups) - 1, max_age)
+                            if i == num_groups - 1:
+                                default_end = max_age
+                            end = st.number_input(
+                                "End",
+                                min_value=min_age, max_value=max_age,
+                                value=default_end,
+                                key=f"age_end_{i}",
+                            )
+
+                        # Validate: end must be >= start
+                        if end < start:
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
+                            age_errors.append(f"Group {i+1}: end < start")
+
+                        custom_age_groups.append((start, end))
+
+                    # Validate: check for overlaps
+                    for i in range(len(custom_age_groups)):
+                        for j in range(i + 1, len(custom_age_groups)):
+                            g1_start, g1_end = custom_age_groups[i]
+                            g2_start, g2_end = custom_age_groups[j]
+                            if g1_start <= g2_end and g2_start <= g1_end:
+                                overlap_start = max(g1_start, g2_start)
+                                overlap_end = min(g1_end, g2_end)
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
+                                age_errors.append(f"Groups {i+1} and {j+1} overlap")
+
+                    if age_errors:
+                        st.error("Invalid groups — please adjust ranges")
+
+                    # Build labels
+                    custom_age_labels = []
+                    for i, (s, e) in enumerate(custom_age_groups):
+                        if i == len(custom_age_groups) - 1 and e == max_age:
+                            custom_age_labels.append(f"{s}+")
+                        else:
+                            custom_age_labels.append(f"{s}-{e}")
+
+                    custom_age_range = {
+                        "groups": custom_age_groups,
+                        "labels": custom_age_labels,
+                        "errors": age_errors,
+                    }
+                elif analysis_variable == "Dependent Children Under 18":
+                    subgroups = st.multiselect(
+                        "Select Groups",
+                        ["Yes", "No"],
+                        default=["Yes", "No"],
+                    )
+                elif analysis_variable == "Financial Education Course":
+                    subgroups = st.multiselect(
+                        "Select Groups",
+                        ["Yes", "No"],
+                        default=["Yes", "No"],
+                    )
+                else:
+                    available_values = sorted(df_genpop[analysis_col].dropna().unique().tolist())
+                    order = get_category_order(analysis_col)
+                    if order:
+                        available_values = [v for v in order if v in available_values]
+                    subgroups = st.multiselect(
+                        f"Select {analysis_variable} Groups",
+                        available_values,
+                        default=available_values,
+                    )
+
+            elif environment == "Financial Well-Being":
+                analysis_variable = st.selectbox(
+                    "Financial Well-Being Variable",
+                    list(FINANCIAL_WELLBEING_VARIABLES.keys()),
+                    label_visibility="collapsed",
                 )
-            else:
-                available_values = sorted(df_genpop[analysis_col].dropna().unique().tolist())
+                analysis_col = FINANCIAL_WELLBEING_VARIABLES[analysis_variable]
+                available_values = df_genpop[analysis_col].dropna().unique().tolist()
                 order = get_category_order(analysis_col)
                 if order:
                     available_values = [v for v in order if v in available_values]
+                else:
+                    available_values = sorted(available_values, key=str)
                 subgroups = st.multiselect(
-                    f"Select {analysis_variable} Groups",
+                    f"Select Groups",
                     available_values,
                     default=available_values,
                 )
-
-        elif environment == "Financial Well-Being":
-            analysis_variable = st.selectbox(
-                "Financial Well-Being Variable",
-                list(FINANCIAL_WELLBEING_VARIABLES.keys()),
-            )
-            analysis_col = FINANCIAL_WELLBEING_VARIABLES[analysis_variable]
-            available_values = df_genpop[analysis_col].dropna().unique().tolist()
-            order = get_category_order(analysis_col)
-            if order:
-                available_values = [v for v in order if v in available_values]
-            else:
-                available_values = sorted(available_values, key=str)
-            subgroups = st.multiselect(
-                f"Select Groups",
-                available_values,
-                default=available_values,
-            )
 
         # Axis assignment
         # Determine the group dimension label
@@ -983,12 +996,11 @@ def render_sidebar(df_years, df_genpop):
                 # Single topic — 2 remaining dimensions to assign
                 single_group_value = selected_topics[0] if selected_topics else None
                 remaining = [d for d in dimensions if d != "Topic"]
-                st.markdown("---")
-                st.markdown("**Axis Assignment**")
-                axis_assignment_shown = True
-                axis_x = st.selectbox("X-Axis", remaining, index=0)
-                axis_legend = [d for d in remaining if d != axis_x][0]
-                st.caption(f"Legend: **{axis_legend}**")
+                with st.expander("Axis Assignment", expanded=True):
+                    axis_assignment_shown = True
+                    axis_x = st.selectbox("X-Axis", remaining, index=0)
+                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    st.caption(f"Legend: **{axis_legend}**")
                 axis_facet = "Topic"
             elif n_group == 1 and n_topics > 1:
                 # Single group — 2 remaining dimensions to assign
@@ -997,23 +1009,21 @@ def render_sidebar(df_years, df_genpop):
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
                 remaining = [d for d in dimensions if d != group_dim_label]
-                st.markdown("---")
-                st.markdown("**Axis Assignment**")
-                axis_assignment_shown = True
-                axis_x = st.selectbox("X-Axis", remaining, index=0)
-                axis_legend = [d for d in remaining if d != axis_x][0]
-                st.caption(f"Legend: **{axis_legend}**")
+                with st.expander("Axis Assignment", expanded=True):
+                    axis_assignment_shown = True
+                    axis_x = st.selectbox("X-Axis", remaining, index=0)
+                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    st.caption(f"Legend: **{axis_legend}**")
                 axis_facet = group_dim_label
             else:
                 # Both have multiple values — show full 3-way dropdowns
-                st.markdown("---")
-                st.markdown("**Axis Assignment**")
-                axis_assignment_shown = True
-                axis_x = st.selectbox("X-Axis", dimensions, index=1)
-                remaining_for_legend = [d for d in dimensions if d != axis_x]
-                axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
-                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
-                st.caption(f"Facet (panels): **{axis_facet}**")
+                with st.expander("Axis Assignment", expanded=True):
+                    axis_assignment_shown = True
+                    axis_x = st.selectbox("X-Axis", dimensions, index=1)
+                    remaining_for_legend = [d for d in dimensions if d != axis_x]
+                    axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
+                    axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
+                    st.caption(f"Facet (panels): **{axis_facet}**")
 
         elif analysis_type == "Topic Bucket":
             # 2 dimensions: Topic and Group
@@ -1033,13 +1043,12 @@ def render_sidebar(df_years, df_genpop):
                 axis_legend = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
             else:
-                st.markdown("---")
-                st.markdown("**Axis Assignment**")
-                axis_assignment_shown = True
-                dimensions = ["Topic", group_dim_label]
-                axis_x = st.selectbox("X-Axis", dimensions, index=0)
-                axis_legend = [d for d in dimensions if d != axis_x][0]
-                st.caption(f"Legend: **{axis_legend}**")
+                with st.expander("Axis Assignment", expanded=True):
+                    axis_assignment_shown = True
+                    dimensions = ["Topic", group_dim_label]
+                    axis_x = st.selectbox("X-Axis", dimensions, index=0)
+                    axis_legend = [d for d in dimensions if d != axis_x][0]
+                    st.caption(f"Legend: **{axis_legend}**")
 
         else:
             # 2 dimensions: Total Correct and Group
@@ -1058,15 +1067,12 @@ def render_sidebar(df_years, df_genpop):
                 axis_x = "Total Correct"
                 axis_legend = group_dim_label
             else:
-                st.markdown("---")
-                st.markdown("**Axis Assignment**")
-                axis_assignment_shown = True
-                dimensions = ["Total Correct", group_dim_label]
-                axis_x = st.selectbox("X-Axis", dimensions, index=0)
-                axis_legend = [d for d in dimensions if d != axis_x][0]
-                st.caption(f"Legend: **{axis_legend}**")
-
-        st.markdown("---")
+                with st.expander("Axis Assignment", expanded=True):
+                    axis_assignment_shown = True
+                    dimensions = ["Total Correct", group_dim_label]
+                    axis_x = st.selectbox("X-Axis", dimensions, index=0)
+                    axis_legend = [d for d in dimensions if d != axis_x][0]
+                    st.caption(f"Legend: **{axis_legend}**")
 
         # Compute number of legend groups for chart type validation
         n_legend_groups = 1
@@ -1090,15 +1096,16 @@ def render_sidebar(df_years, df_genpop):
         elif axis_x == group_dim_label:
             n_x_groups = n_group
 
-        # Chart type selection (after axis assignment so stacked bar validity can be checked)
-        valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
-        chart_type = st.selectbox("Chart Type", valid_charts)
+        # Section 5: Chart Type + Show percentages toggle
+        with st.expander("Chart Type", expanded=True):
+            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
+            chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
 
-        # Show percentages toggle (only for bar chart types)
-        show_pct_labels = False
-        if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
-                          "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
-            show_pct_labels = st.toggle("Show percentages on bars", value=True)
+            # Show percentages toggle (only for bar chart types)
+            show_pct_labels = False
+            if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
+                              "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
+                show_pct_labels = st.toggle("Show percentages on bars", value=True)
 
         return {
             "environment": environment,
