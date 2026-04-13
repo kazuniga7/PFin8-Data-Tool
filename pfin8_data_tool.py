@@ -593,20 +593,19 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             if show_pct_labels and chart_type in ["Bar Chart", "Grouped Bar Chart",
                                                    "Horizontal Bar Chart", "Horizontal Grouped Bar Chart",
                                                    "Stacked Bar Chart"]:
-                # Hide labels when total bars exceeds threshold
-                # Font size based on n_legend_groups (bars per x position = bar width driver)
                 total_bars = sum(len(trace.x) if hasattr(trace, 'x') and trace.x is not None else 0
                                  for trace in fig.data)
-                if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
-                    text_template = "<b>%{x:.0f}%</b>"
-                else:
-                    text_template = "<b>%{y:.0f}%</b>"
+                if total_bars <= 70:
+                    if chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
+                        text_template = "<b>%{x:.0f}%</b>"
+                    else:
+                        text_template = "<b>%{y:.0f}%</b>"
 
-                fig.update_traces(
-                    texttemplate=text_template,
-                    textposition="inside",
-                    insidetextfont=dict(color="black"),
-                )
+                    fig.update_traces(
+                        texttemplate=text_template,
+                        textposition="inside",
+                        insidetextfont=dict(color="black"),
+                    )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
         return None
