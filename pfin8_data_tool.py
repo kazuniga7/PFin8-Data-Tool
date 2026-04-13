@@ -404,6 +404,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
             if len(facet_dims) >= 2:
                 # 2D grid of pies: rows = facet_dims[0], cols = facet_dims[1]
+                # Use manual domain placement to avoid blank space from make_subplots
                 row_dim = facet_dims[0]
                 col_dim = facet_dims[1]
 
@@ -426,19 +427,14 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     slice_order = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(slice_order)}
 
-                v_spacing = min(0.005, 0.1 / max(n_rows_grid - 1, 1))
-                h_spacing = min(0.005, 0.1 / max(n_cols_grid - 1, 1))
+                row_h = 1.0 / n_rows_grid
+                col_w = 1.0 / n_cols_grid
+                gap = 0.01
 
-                fig = make_subplots(
-                    rows=n_rows_grid, cols=n_cols_grid,
-                    specs=[[{"type": "pie"}] * n_cols_grid for _ in range(n_rows_grid)],
-                    row_titles=[str(v) for v in row_vals],
-                    column_titles=[str(v) for v in col_vals],
-                    vertical_spacing=v_spacing,
-                    horizontal_spacing=h_spacing,
-                )
-
+                fig = go.Figure()
+                annotations = []
                 first_trace = True
+
                 for r, row_val in enumerate(row_vals):
                     for c, col_val in enumerate(col_vals):
                         subset = chart_data[
@@ -452,23 +448,43 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             values = ordered["percentage"].tolist()
                             colors = [color_map.get(l, "#cccccc") for l in labels]
                             show_labels = not n_legend_groups or n_legend_groups <= 10
-                            fig.add_trace(
-                                go.Pie(
-                                    labels=labels,
-                                    values=values,
-                                    marker=dict(colors=colors),
-                                    showlegend=first_trace,
-                                    name="",
-                                    textinfo="percent+label" if show_labels else "none",
-                                    textfont=dict(color="black"),
-                                ),
-                                row=r + 1, col=c + 1,
-                            )
+                            x0 = c * col_w + gap
+                            x1 = (c + 1) * col_w - gap
+                            y0 = 1.0 - (r + 1) * row_h + gap
+                            y1 = 1.0 - r * row_h - gap
+                            fig.add_trace(go.Pie(
+                                labels=labels,
+                                values=values,
+                                marker=dict(colors=colors),
+                                domain=dict(x=[x0, x1], y=[y0, y1]),
+                                showlegend=first_trace,
+                                name="",
+                                textinfo="percent+label" if show_labels else "none",
+                                textfont=dict(color="black"),
+                            ))
                             first_trace = False
+
+                    # Row title annotation (right side)
+                    annotations.append(dict(
+                        x=1.01, y=1.0 - (r + 0.5) * row_h,
+                        xref="paper", yref="paper",
+                        text=str(row_val), showarrow=False,
+                        xanchor="left", font=dict(color="black", size=11),
+                    ))
+
+                # Column title annotations (top)
+                for c, col_val in enumerate(col_vals):
+                    annotations.append(dict(
+                        x=(c + 0.5) * col_w, y=1.01,
+                        xref="paper", yref="paper",
+                        text=str(col_val), showarrow=False,
+                        yanchor="bottom", font=dict(color="black", size=11),
+                    ))
 
                 fig.update_layout(
                     title=title,
-                    height=max(300, n_rows_grid * 80),
+                    annotations=annotations,
+                    height=max(400, n_rows_grid * 150),
                     font=dict(size=12, color="black"),
                     title_font=dict(size=16, color="black"),
                     legend=dict(font=dict(color="black"), title_font=dict(color="black")),
