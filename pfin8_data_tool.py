@@ -1612,97 +1612,11 @@ def main():
         excel_buffer.seek(0)
         xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
 
-        # Build HTML table string for facet case (reused for PNG and on-screen display)
-        if facet_groups:
-            row_lbl = pivot_df.index.name or ""
-            _th1 = (
-                f'<th rowspan="2" style="background:#1f4e79;color:white;'
-                f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{row_lbl}</th>'
-            )
-            for facet, cats in facet_groups.items():
-                _th1 += (
-                    f'<th colspan="{len(cats)}" style="background:#1f4e79;color:white;'
-                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
-                )
-            _th1 += (
-                '<th rowspan="2" style="background:#1f4e79;color:white;'
-                'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">Response Count</th>'
-            )
-            _th2 = ""
-            for facet, cats in facet_groups.items():
-                for cat in cats:
-                    _th2 += (
-                        f'<th style="background:#d0e4f7;color:black;text-align:center !important;'
-                        f'padding:6px 10px;border:1px solid #ccc;">{cat}</th>'
-                    )
-            _tbody = ""
-            for i, (idx, row) in enumerate(pivot_df.iterrows()):
-                bg = "#f9f9f9" if i % 2 == 0 else "white"
-                _tbody += f'<tr style="background:{bg}">'
-                _tbody += f'<td style="padding:6px 10px;border:1px solid #eee;font-weight:bold;">{idx}</td>'
-                for facet, cats in facet_groups.items():
-                    for cat in cats:
-                        val = row.get(f"{facet} — {cat}", "")
-                        _tbody += f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">{val}</td>'
-                _tbody += (
-                    f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">'
-                    f'{row.get("Response Count", "")}</td>'
-                )
-                _tbody += "</tr>"
-            table_html_inner = (
-                '<table style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">'
-                f'<thead><tr>{_th1}</tr><tr>{_th2}</tr></thead>'
-                f'<tbody>{_tbody}</tbody>'
-                '</table>'
-            )
-        else:
-            table_html_inner = None
-
-        # Generate table as PNG
+        # Generate table as PNG using Plotly go.Table
         table_png_available = False
         table_png_b64 = ""
         try:
-            if facet_groups and table_html_inner:
-                # Try headless Chrome via html2image (true screenshot of the rendered HTML)
-                _h2i_ok = False
-                try:
-                    import shutil
-                    import tempfile
-                    import os
-                    from html2image import Html2Image
-                    chromium = shutil.which("chromium-browser") or shutil.which("chromium")
-                    if not chromium:
-                        raise RuntimeError("Chromium not found")
-                    n_data_cols = sum(len(cats) for cats in facet_groups.values())
-                    total_cols = 1 + n_data_cols + 1
-                    n_data_rows = len(pivot_df)
-                    width = max(1200, total_cols * 130 + 40)
-                    height = max(400, (n_data_rows + 4) * 45 + 180)
-                    full_html = (
-                        '<!DOCTYPE html><html><head><meta charset="utf-8">'
-                        '<style>body{font-family:sans-serif;margin:20px;}</style></head>'
-                        f'<body><h3 style="color:black;margin-bottom:16px;">{chart_title}</h3>'
-                        f'{table_html_inner}</body></html>'
-                    )
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        hti = Html2Image(
-                            browser_executable=chromium,
-                            output_path=tmpdir,
-                            custom_flags=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
-                        )
-                        hti.screenshot(html_str=full_html, save_as="table.png", size=(width, height))
-                        with open(os.path.join(tmpdir, "table.png"), "rb") as f:
-                            table_png_bytes = f.read()
-                    table_png_b64 = base64.b64encode(table_png_bytes).decode()
-                    table_png_available = True
-                    _h2i_ok = True
-                except Exception:
-                    pass
-                if not _h2i_ok:
-                    # Fallback: go.Table with simulated two-row header
-                    raise Exception("html2image unavailable, use go.Table fallback")
-            if facet_groups and not table_png_available:
-                # go.Table fallback for facet case
+            if facet_groups:
                 # Simulated two-row header for facet tables:
                 # Top header row = facet group names (with blank cells for extra sub-columns)
                 # First cells row = sub-column names, styled as a second header
@@ -1836,11 +1750,53 @@ def main():
                 )
             st.markdown(download_html, unsafe_allow_html=True)
 
-        if facet_groups and table_html_inner:
-            st.markdown(
-                f'<div style="overflow-x:auto;font-size:0.85rem;">{table_html_inner}</div>',
-                unsafe_allow_html=True,
+        if facet_groups:
+            # Custom HTML table with grouped two-row headers
+            row_lbl = pivot_df.index.name or ""
+            thead_row1 = (
+                f'<th rowspan="2" style="background:#1f4e79;color:white;text-align:center;'
+                f'padding:8px 12px;border:1px solid #ccc;">{row_lbl}</th>'
             )
+            for facet, cats in facet_groups.items():
+                thead_row1 += (
+                    f'<th colspan="{len(cats)}" style="background:#1f4e79;color:white;'
+                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{facet}</th>'
+                )
+            thead_row1 += (
+                '<th rowspan="2" style="background:#1f4e79;color:white;text-align:center;'
+                'padding:8px 12px;border:1px solid #ccc;">Response Count</th>'
+            )
+            thead_row2 = ""
+            for facet, cats in facet_groups.items():
+                for cat in cats:
+                    thead_row2 += (
+                        f'<th style="background:#d0e4f7;color:black;text-align:center;'
+                        f'padding:6px 10px;border:1px solid #ccc;">{cat}</th>'
+                    )
+            tbody = ""
+            for i, (idx, row) in enumerate(pivot_df.iterrows()):
+                bg = "#f9f9f9" if i % 2 == 0 else "white"
+                tbody += f'<tr style="background:{bg}">'
+                tbody += (
+                    f'<td style="padding:6px 10px;border:1px solid #eee;font-weight:bold;">{idx}</td>'
+                )
+                for facet, cats in facet_groups.items():
+                    for cat in cats:
+                        val = row.get(f"{facet} — {cat}", "")
+                        tbody += f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">{val}</td>'
+                tbody += (
+                    f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">'
+                    f'{row.get("Response Count", "")}</td>'
+                )
+                tbody += "</tr>"
+            table_html = (
+                '<div style="overflow-x:auto;font-size:0.85rem;">'
+                '<table style="border-collapse:collapse;width:100%;">'
+                f"<thead><tr>{thead_row1}</tr><tr>{thead_row2}</tr></thead>"
+                f"<tbody>{tbody}</tbody>"
+                "</table></div>"
+            )
+            st.markdown(table_html, unsafe_allow_html=True)
         else:
             st.table(pivot_df)
 
