@@ -407,6 +407,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
                 n_pie_rows = -(-len(chart_data["_pie_facet"].unique()) // 4)  # ceil(total / 4)
                 safe_spacing = min(0.05, 1 / max(n_pie_rows - 1, 1)) if n_pie_rows > 1 else 0.05
+                pie_height = max(600, n_pie_rows * 250)
                 fig = px.pie(
                     chart_data, values="percentage", names=slice_col,
                     title=title, labels=label_map,
@@ -414,6 +415,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     facet_col="_pie_facet",
                     facet_col_wrap=4,
                     facet_row_spacing=safe_spacing,
+                    height=pie_height,
                 )
             elif len(facet_dims) == 1:
                 fig = px.pie(
