@@ -1462,102 +1462,112 @@ def main():
     config = render_sidebar(df_years, df_genpop)
 
     # Custom always-visible sidebar scrollbar.
-    # CSS-based approaches fail on macOS because the OS controls overlay scrollbar
-    # visibility. Instead we hide the native scrollbar and build a custom one with
-    # JS divs that are always visible and sync with scroll position.
+    # CSS approaches fail on macOS because the OS controls overlay scrollbar
+    # visibility. Instead we hide the native scrollbar and build a persistent
+    # custom one with JS divs that sync with scroll position.
     import streamlit.components.v1 as _components
     _components.html("""
 <script>
 (function() {
-    function setup() {
-        var doc = window.parent.document;
-        var win = window.parent;
-        var sidebar = doc.querySelector('section[data-testid="stSidebar"]');
-        if (!sidebar) return;
+    var doc = window.parent.document;
+    var win = window.parent;
+    var scrollEl = null;
+    var track = null;
+    var thumb = null;
 
-        // Find the scrollable element inside the sidebar
-        var scrollEl = null;
+    function findScrollEl() {
+        var sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+        if (!sidebar) return null;
         var els = sidebar.querySelectorAll('*');
         for (var i = 0; i < els.length; i++) {
             var cs = win.getComputedStyle(els[i]);
             if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') {
-                scrollEl = els[i];
-                break;
+                return els[i];
             }
         }
-        if (!scrollEl) return;
-
-        // Don't set up twice
-        if (doc.getElementById('pfin8-sb-track')) return;
-
-        // Hide the native scrollbar
-        var hideStyle = doc.createElement('style');
-        hideStyle.id = 'pfin8-sb-hide';
-        hideStyle.textContent =
-            '.pfin8-no-scrollbar::-webkit-scrollbar { display: none !important; width: 0 !important; }' +
-            '.pfin8-no-scrollbar { scrollbar-width: none !important; -ms-overflow-style: none !important; }';
-        doc.head.appendChild(hideStyle);
-        scrollEl.classList.add('pfin8-no-scrollbar');
-
-        // Build custom track + thumb
-        var track = doc.createElement('div');
-        track.id = 'pfin8-sb-track';
-        var thumb = doc.createElement('div');
-        thumb.id = 'pfin8-sb-thumb';
-
-        Object.assign(track.style, {
-            position: 'fixed',
-            width: '6px',
-            background: 'rgba(49,51,63,0.1)',
-            borderRadius: '4px',
-            zIndex: '99999',
-            pointerEvents: 'none',
-            transition: 'none'
-        });
-        Object.assign(thumb.style, {
-            position: 'absolute',
-            width: '100%',
-            background: 'rgba(49,51,63,0.4)',
-            borderRadius: '4px',
-            minHeight: '40px',
-            transition: 'none'
-        });
-
-        track.appendChild(thumb);
-        doc.body.appendChild(track);
-
-        function update() {
-            var r = sidebar.getBoundingClientRect();
-            if (scrollEl.scrollHeight <= scrollEl.clientHeight + 2) {
-                track.style.display = 'none';
-                return;
-            }
-            track.style.display = 'block';
-            track.style.top    = r.top + 'px';
-            track.style.height = r.height + 'px';
-            track.style.right  = (win.innerWidth - r.right + 2) + 'px';
-
-            var trackH  = r.height;
-            var thumbH  = Math.max(40, (scrollEl.clientHeight / scrollEl.scrollHeight) * trackH);
-            var thumbTop = (scrollEl.scrollTop / (scrollEl.scrollHeight - scrollEl.clientHeight)) * (trackH - thumbH);
-            thumb.style.height = thumbH + 'px';
-            thumb.style.top    = thumbTop + 'px';
-        }
-
-        scrollEl.addEventListener('scroll', update);
-        win.addEventListener('resize', update);
-        update();
+        return null;
     }
 
-    // Retry until Streamlit has rendered the sidebar
+    function update() {
+        if (!scrollEl || !track) return;
+        var sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+        if (!sidebar) return;
+        var r = sidebar.getBoundingClientRect();
+        if (scrollEl.scrollHeight <= scrollEl.clientHeight + 2) {
+            track.style.display = 'none';
+            return;
+        }
+        track.style.display = 'block';
+        track.style.top    = r.top + 'px';
+        track.style.height = r.height + 'px';
+        track.style.right  = (win.innerWidth - r.right + 2) + 'px';
+        var trackH   = r.height;
+        var thumbH   = Math.max(40, (scrollEl.clientHeight / scrollEl.scrollHeight) * trackH);
+        var maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+        var thumbTop  = maxScroll > 0 ? (scrollEl.scrollTop / maxScroll) * (trackH - thumbH) : 0;
+        thumb.style.height = thumbH + 'px';
+        thumb.style.top    = thumbTop + 'px';
+    }
+
+    function setup() {
+        // Inject hide-native-scrollbar style once
+        if (!doc.getElementById('pfin8-sb-hide')) {
+            var s = doc.createElement('style');
+            s.id = 'pfin8-sb-hide';
+            s.textContent =
+                '.pfin8-no-sb::-webkit-scrollbar{display:none!important;width:0!important}' +
+                '.pfin8-no-sb{scrollbar-width:none!important;-ms-overflow-style:none!important}';
+            doc.head.appendChild(s);
+        }
+
+        // Find scrollable element
+        var el = findScrollEl();
+        if (!el) return false;
+        if (scrollEl !== el) {
+            scrollEl = el;
+            scrollEl.classList.add('pfin8-no-sb');
+            scrollEl.addEventListener('scroll', update);
+        }
+
+        // Create track+thumb once
+        if (!doc.getElementById('pfin8-sb-track')) {
+            track = doc.createElement('div');
+            track.id = 'pfin8-sb-track';
+            thumb = doc.createElement('div');
+            thumb.id = 'pfin8-sb-thumb';
+            Object.assign(track.style, {
+                position:'fixed', width:'6px',
+                background:'rgba(49,51,63,0.1)',
+                borderRadius:'4px', zIndex:'99999',
+                pointerEvents:'none', transition:'none', display:'none'
+            });
+            Object.assign(thumb.style, {
+                position:'absolute', width:'100%',
+                background:'rgba(49,51,63,0.4)',
+                borderRadius:'4px', minHeight:'40px', transition:'none'
+            });
+            track.appendChild(thumb);
+            doc.body.appendChild(track);
+            win.addEventListener('resize', update);
+        } else {
+            track = doc.getElementById('pfin8-sb-track');
+            thumb = doc.getElementById('pfin8-sb-thumb');
+        }
+
+        update();
+        return track.style.display === 'block';
+    }
+
+    // Retry until the track becomes visible (content may load after script runs)
     var attempts = 0;
     function trySetup() {
-        var doc = window.parent.document;
-        if (doc.getElementById('pfin8-sb-track')) return;
-        setup();
-        if (++attempts < 10) setTimeout(trySetup, 500);
+        var ready = setup();
+        if (!ready && ++attempts < 30) setTimeout(trySetup, 300);
     }
     trySetup();
+
+    // Periodic refresh so thumb stays correct after Streamlit re-renders
+    setInterval(function() { setup(); }, 1000);
 })();
 </script>
 """, height=0)
