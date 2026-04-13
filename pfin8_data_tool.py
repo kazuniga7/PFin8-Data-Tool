@@ -782,14 +782,16 @@ section[data-testid="stSidebar"] > div:first-child {
     overflow-y: scroll !important;
 }
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(49, 51, 63, 0.08);
+    border-radius: 4px;
 }
 section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
-    background: rgba(49, 51, 63, 0.3);
-    border-radius: 3px;
+    background: rgba(49, 51, 63, 0.35);
+    border-radius: 4px;
+    min-height: 40px;
 }
 </style>
 """, unsafe_allow_html=True)
