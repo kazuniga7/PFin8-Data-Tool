@@ -427,9 +427,10 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     slice_order = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(slice_order)}
 
-                row_h = 1.0 / n_rows_grid
                 col_w = 1.0 / n_cols_grid
-                gap = 0.01
+                title_space = 0.05  # reserve top 5% for column titles
+                row_h = (1.0 - title_space) / n_rows_grid
+                gap = 0.005
 
                 fig = go.Figure()
                 annotations = []
@@ -450,8 +451,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             show_labels = not n_legend_groups or n_legend_groups <= 10
                             x0 = c * col_w + gap
                             x1 = (c + 1) * col_w - gap
-                            y0 = 1.0 - (r + 1) * row_h + gap
-                            y1 = 1.0 - r * row_h - gap
+                            y0 = (1.0 - title_space) - (r + 1) * row_h + gap
+                            y1 = (1.0 - title_space) - r * row_h - gap
                             fig.add_trace(go.Pie(
                                 labels=labels,
                                 values=values,
@@ -465,20 +466,21 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             first_trace = False
 
                     # Row title annotation (right side)
+                    y_mid = (1.0 - title_space) - (r + 0.5) * row_h
                     annotations.append(dict(
-                        x=1.01, y=1.0 - (r + 0.5) * row_h,
+                        x=1.01, y=y_mid,
                         xref="paper", yref="paper",
                         text=str(row_val), showarrow=False,
                         xanchor="left", font=dict(color="black", size=11),
                     ))
 
-                # Column title annotations (top)
+                # Column title annotations (inside top title_space band)
                 for c, col_val in enumerate(col_vals):
                     annotations.append(dict(
-                        x=(c + 0.5) * col_w, y=1.01,
+                        x=(c + 0.5) * col_w, y=1.0 - title_space / 2,
                         xref="paper", yref="paper",
                         text=str(col_val), showarrow=False,
-                        yanchor="bottom", font=dict(color="black", size=11),
+                        yanchor="middle", font=dict(color="black", size=11),
                     ))
 
                 fig.update_layout(
