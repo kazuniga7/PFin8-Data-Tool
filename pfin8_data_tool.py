@@ -777,6 +777,20 @@ section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
     padding: 0.5rem 0 0 0 !important;
     border: none !important;
 }
+/* Always show sidebar scrollbar so users know more content exists */
+section[data-testid="stSidebar"] > div:first-child {
+    overflow-y: scroll !important;
+}
+section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
+    width: 6px;
+}
+section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-track {
+    background: transparent;
+}
+section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
+    background: rgba(49, 51, 63, 0.3);
+    border-radius: 3px;
+}
 </style>
 """, unsafe_allow_html=True)
 
