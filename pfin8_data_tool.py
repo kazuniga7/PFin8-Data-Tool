@@ -1479,32 +1479,17 @@ def main():
 
     # Main content
     st.title("P-Fin 8 Data Exploration Tool")
-    st.markdown("**What is the P-Fin?**")
     st.markdown(
-        "The TIAA Institute–GFLEC Personal Finance Index (P-Fin) is an annual survey of U.S. adults "
-        "designed to measure the knowledge and understanding needed for sound financial decision-making "
-        "and effective management of personal finances. It was first fielded in 2016 for the inaugural "
-        "2017 report, and it has since been used each year as a broad measure of financial literacy in "
-        "the United States."
+        "This tool was designed to help users explore the P-Fin 8 Index data through customizable visual "
+        "analysis. To create a visual, please work through the toolbar in the following order: "
+        "**Analysis Type → Analysis Type Filters → Exploration Type → Variable Selection → Variable Filters "
+        "→ Chart Type → Axis Assignment**. If you plan to use any visual created with this tool in your own "
+        "work, please cite The TIAA Institute–GFLEC Personal Finance Index. Enjoy exploring the data!"
     )
 
     # Custom CSS
     st.markdown("""
         <style>
-        /* Show more/less buttons look like text links */
-        [data-testid="stButton"] button {
-            background: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: -10px 0 0 0 !important;
-            color: inherit !important;
-            font-weight: 800 !important;
-            font-size: 1rem !important;
-            cursor: pointer !important;
-            box-shadow: none !important;
-            min-height: 0 !important;
-            line-height: 1.5 !important;
-        }
         [data-testid="stButton"] button:hover {
             text-decoration: underline !important;
             color: #1f4e79 !important;
@@ -1527,34 +1512,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    if "show_full_summary" not in st.session_state:
-        st.session_state.show_full_summary = False
-
-    if not st.session_state.show_full_summary:
-        if st.button("Show more", key="show_more"):
-            st.session_state.show_full_summary = True
-            st.rerun()
-    else:
-        st.markdown(
-            "The P-Fin measures financial literacy using 28 multiple-choice questions grouped across "
-            "eight functional areas of personal finance: earning, consuming, saving, investing, "
-            "borrowing/managing debt, insuring, comprehending uncertainty, and go-to information sources. "
-            "In this way, the survey does not treat financial literacy as a single narrow concept, but "
-            "rather as a broad set of skills tied to the major areas in which people routinely make "
-            "financial decisions.\n\n"
-            "Researchers recently created a smaller reduced-form financial literacy measure by selecting "
-            "one question from each of the eight topic buckets. This produces an 8-question index, which "
-            "can be referred to as the P-Fin 8. The P-Fin 8 preserves the broad topic coverage of the "
-            "original survey while offering a shorter summary measure of financial literacy.\n\n"
-            "Using this tool, you will be able to explore the P-Fin 8 with visuals in three different "
-            "ways: responses throughout the years, by demographics, and by financial well-being. For each "
-            "environment, you will be able to create visuals of the data for further analysis.\n\n"
-            "For further information, visit "
-            "[The TIAA Institute-GFLEC](https://gflec.org/initiatives/personal-finance-index/#list)."
-        )
-        if st.button("Show less", key="show_less"):
-            st.session_state.show_full_summary = False
-            st.rerun()
     st.markdown("---")
 
     # Run analysis
