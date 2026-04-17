@@ -1481,10 +1481,12 @@ def main():
     st.title("P-Fin 8 Data Exploration Tool")
     st.markdown(
         "This tool was designed to help users explore the P-Fin 8 Index data through customizable visual "
-        "analysis. To create a visual, please work through the toolbar in the following order: "
-        "**Analysis Type → Analysis Type Filters → Exploration Type → Variable Selection → Variable Filters "
-        "→ Chart Type → Axis Assignment**. If you plan to use any visual created with this tool in your own "
-        "work, please cite The TIAA Institute–GFLEC Personal Finance Index. Enjoy exploring the data!"
+        "analysis. All visual analysis presented in the tool is based on weighted data so that the results "
+        "are representative of the national population. To create a visual, please work through the toolbar "
+        "in the following order: **Analysis Type → Analysis Type Filters → Exploration Type → Variable "
+        "Selection → Variable Filters → Chart Type → Axis Assignment**. If you plan to use any visual "
+        "created with this tool in your own work, please cite The TIAA Institute–GFLEC Personal Finance "
+        "Index. We hope you enjoy exploring the data."
     )
 
     # Custom CSS
