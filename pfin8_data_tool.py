@@ -1512,7 +1512,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown('<hr style="margin-top:0.5rem;margin-bottom:0;">', unsafe_allow_html=True)
 
     # Run analysis
     fig, note, checks, chart_data, chart_title = run_analysis(config, df_years, df_genpop)
