@@ -806,16 +806,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 </style>
 """, unsafe_allow_html=True)
 
-        # Section 1: Exploration Type
-        with st.expander("Exploration Type", expanded=True):
-            environment = st.radio(
-                "Exploration Type",
-                ["Over the Years", "Demographics", "Financial Well-Being"],
-                help="Choose how you want to explore the P-Fin 8 data",
-                label_visibility="collapsed",
-            )
-
-        # Section 2: Analysis Type
+        # Section 1: Analysis Type
         with st.expander("Analysis Type", expanded=True):
             analysis_type = st.radio(
                 "Analysis Type",
@@ -824,13 +815,13 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 label_visibility="collapsed",
             )
 
-        # Section 3: View Mode / Number Correct Range
+        # Section 2: View Mode / Number Correct Range
         view_mode = None
         selected_topics = None
         selected_range = None
 
-        _sec3_title = "View Mode" if analysis_type == "Topic Bucket" else "Number Correct Range"
-        with st.expander(_sec3_title, expanded=True):
+        _sec2_title = "View Mode" if analysis_type == "Topic Bucket" else "Number Correct Range"
+        with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Topic Bucket":
                 view_mode = st.radio(
                     "View Mode",
@@ -853,6 +844,15 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     help="Filter the range of total correct scores",
                     label_visibility="collapsed",
                 )
+
+        # Section 3: Exploration Type
+        with st.expander("Exploration Type", expanded=True):
+            environment = st.radio(
+                "Exploration Type",
+                ["Over the Years", "Demographics", "Financial Well-Being"],
+                help="Choose how you want to explore the P-Fin 8 data",
+                label_visibility="collapsed",
+            )
 
         # Section 4: Environment-specific filters
         analysis_variable = None
@@ -1024,55 +1024,50 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         axis_x = None
         axis_legend = None
         axis_facet = None
-        single_group_value = None  # Track the single group's display value for title
-        axis_assignment_shown = False  # Track if axis dropdowns were displayed
+        single_group_value = None
+        axis_assignment_shown = False
+        _aa_info = None  # Info for deferred Axis Assignment expander
 
         if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
-            # 3 dimensions: Topic, Group, Response Category
-            # Response Category always has 3, so check Topic and Group
             dimensions = ["Topic", group_dim_label, "Response Category"]
 
             if n_topics == 1 and n_group == 1:
-                # Both single — auto-assign everything, no dropdowns
                 axis_x = "Response Category"
                 axis_legend = "Topic"
                 axis_facet = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
             elif n_topics == 1 and n_group > 1:
-                # Single topic — 2 remaining dimensions to assign
                 single_group_value = selected_topics[0] if selected_topics else None
                 remaining = [d for d in dimensions if d != "Topic"]
-                with st.expander("Axis Assignment", expanded=True):
-                    axis_assignment_shown = True
-                    axis_x = st.selectbox("X-Axis", remaining, index=0)
-                    axis_legend = [d for d in remaining if d != axis_x][0]
-                    st.caption(f"Legend: **{axis_legend}**")
+                axis_assignment_shown = True
+                _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
+                _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
+                axis_x = _curr_x if _curr_x in remaining else remaining[0]
+                axis_legend = [d for d in remaining if d != axis_x][0]
                 axis_facet = "Topic"
             elif n_group == 1 and n_topics > 1:
-                # Single group — 2 remaining dimensions to assign
                 if environment == "Over the Years" and year_range:
                     single_group_value = str(year_range[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
                 remaining = [d for d in dimensions if d != group_dim_label]
-                with st.expander("Axis Assignment", expanded=True):
-                    axis_assignment_shown = True
-                    axis_x = st.selectbox("X-Axis", remaining, index=0)
-                    axis_legend = [d for d in remaining if d != axis_x][0]
-                    st.caption(f"Legend: **{axis_legend}**")
+                axis_assignment_shown = True
+                _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
+                _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
+                axis_x = _curr_x if _curr_x in remaining else remaining[0]
+                axis_legend = [d for d in remaining if d != axis_x][0]
                 axis_facet = group_dim_label
             else:
-                # Both have multiple values — show full 3-way dropdowns
-                with st.expander("Axis Assignment", expanded=True):
-                    axis_assignment_shown = True
-                    axis_x = st.selectbox("X-Axis", dimensions, index=1)
-                    remaining_for_legend = [d for d in dimensions if d != axis_x]
-                    axis_legend = st.selectbox("Legend", remaining_for_legend, index=0)
-                    axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
-                    st.caption(f"Facet (panels): **{axis_facet}**")
+                axis_assignment_shown = True
+                _aa_info = {'type': 'three_way', 'options': dimensions, 'default_x_idx': 1}
+                _curr_x = st.session_state.get('pfin8_aa_x', dimensions[1])
+                axis_x = _curr_x if _curr_x in dimensions else dimensions[1]
+                _rem = [d for d in dimensions if d != axis_x]
+                _curr_legend = st.session_state.get('pfin8_aa_legend', _rem[0])
+                axis_legend = _curr_legend if _curr_legend in _rem else _rem[0]
+                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
 
         elif analysis_type == "Topic Bucket":
-            # 2 dimensions: Topic and Group
             if n_topics == 1 and n_group > 1:
                 axis_x = group_dim_label
                 axis_legend = "Topic"
@@ -1089,15 +1084,14 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_legend = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
             else:
-                with st.expander("Axis Assignment", expanded=True):
-                    axis_assignment_shown = True
-                    dimensions = ["Topic", group_dim_label]
-                    axis_x = st.selectbox("X-Axis", dimensions, index=0)
-                    axis_legend = [d for d in dimensions if d != axis_x][0]
-                    st.caption(f"Legend: **{axis_legend}**")
+                axis_assignment_shown = True
+                _dim2 = ["Topic", group_dim_label]
+                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
+                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
+                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
+                axis_legend = [d for d in _dim2 if d != axis_x][0]
 
         else:
-            # 2 dimensions: Number Correct and Group
             if n_total_correct == 1 and n_group > 1:
                 axis_x = group_dim_label
                 axis_legend = "Number Correct"
@@ -1113,14 +1107,14 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_x = "Number Correct"
                 axis_legend = group_dim_label
             else:
-                with st.expander("Axis Assignment", expanded=True):
-                    axis_assignment_shown = True
-                    dimensions = ["Number Correct", group_dim_label]
-                    axis_x = st.selectbox("X-Axis", dimensions, index=0)
-                    axis_legend = [d for d in dimensions if d != axis_x][0]
-                    st.caption(f"Legend: **{axis_legend}**")
+                axis_assignment_shown = True
+                _dim2 = ["Number Correct", group_dim_label]
+                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
+                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
+                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
+                axis_legend = [d for d in _dim2 if d != axis_x][0]
 
-        # Compute number of legend groups for chart type validation
+        # Compute n_legend_groups and n_x_groups for chart type validation
         n_legend_groups = 1
         if axis_legend == "Topic":
             n_legend_groups = n_topics
@@ -1131,7 +1125,6 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         elif axis_legend == group_dim_label:
             n_legend_groups = n_group
 
-        # Compute number of x-axis groups
         n_x_groups = 1
         if axis_x == "Topic":
             n_x_groups = n_topics
@@ -1147,11 +1140,37 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
             chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
 
-            # Show percentages toggle (only for bar chart types)
             show_pct_labels = False
             if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
                               "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
                 show_pct_labels = st.toggle("Show percentages on bars", value=True)
+
+        # Section 6: Axis Assignment (after Chart Type, uses session_state for persistence)
+        if axis_assignment_shown and _aa_info:
+            with st.expander("Axis Assignment", expanded=True):
+                _opts = _aa_info['options']
+                if _aa_info['type'] == 'three_way':
+                    axis_x = st.selectbox(
+                        "X-Axis", _opts,
+                        index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_x_idx'],
+                        key='pfin8_aa_x',
+                    )
+                    _rem = [d for d in _opts if d != axis_x]
+                    axis_legend = st.selectbox(
+                        "Legend", _rem,
+                        index=_rem.index(axis_legend) if axis_legend in _rem else 0,
+                        key='pfin8_aa_legend',
+                    )
+                    axis_facet = [d for d in _opts if d != axis_x and d != axis_legend][0]
+                    st.caption(f"Facet (panels): **{axis_facet}**")
+                else:
+                    axis_x = st.selectbox(
+                        "X-Axis", _opts,
+                        index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_idx'],
+                        key='pfin8_aa_x',
+                    )
+                    axis_legend = [d for d in _opts if d != axis_x][0]
+                    st.caption(f"Legend: **{axis_legend}**")
 
         return {
             "environment": environment,
