@@ -1135,17 +1135,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         elif axis_x == group_dim_label:
             n_x_groups = n_group
 
-        # Section 5: Chart Type + Show percentages toggle
-        with st.expander("Chart Type", expanded=True):
-            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
-            chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
-
-            show_pct_labels = False
-            if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
-                              "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
-                show_pct_labels = st.toggle("Show percentages on bars", value=True)
-
-        # Section 6: Axis Assignment (after Chart Type, uses session_state for persistence)
+        # Section 5: Axis Assignment
         if axis_assignment_shown and _aa_info:
             with st.expander("Axis Assignment", expanded=True):
                 _opts = _aa_info['options']
@@ -1171,6 +1161,16 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     )
                     axis_legend = [d for d in _opts if d != axis_x][0]
                     st.caption(f"Legend: **{axis_legend}**")
+
+        # Section 6: Chart Type + Show percentages toggle
+        with st.expander("Chart Type", expanded=True):
+            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
+            chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
+
+            show_pct_labels = False
+            if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
+                              "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
+                show_pct_labels = st.toggle("Show percentages on bars", value=True)
 
         return {
             "environment": environment,
