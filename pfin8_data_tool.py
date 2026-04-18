@@ -663,7 +663,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 def generate_note(environment, analysis_type, view_mode, selected_topics, selected_range,
                   analysis_variable, subgroups, n_obs, dataset_name, year_range=None):
     parts = []
-    parts.append(f"**Data Source:** {dataset_name}")
+    parts.append("**Data Source:** TIAA G-Flec Personal Finance Index")
 
     if environment == "Over the Years":
         yr_text = f"{year_range[0]}–{year_range[1]}" if year_range else "2017–2026"
