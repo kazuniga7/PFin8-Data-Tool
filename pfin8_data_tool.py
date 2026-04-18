@@ -649,6 +649,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         texttemplate=text_template,
                         textposition="inside",
                         insidetextfont=dict(color="black"),
+                        textangle=-90,
                     )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
