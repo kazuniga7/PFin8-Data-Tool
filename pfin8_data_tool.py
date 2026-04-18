@@ -655,8 +655,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
         fig.add_annotation(
             text="Source: TIAA G-Flec Personal Finance Index",
             xref="paper", yref="paper",
-            x=1, y=0,
-            xanchor="right", yanchor="bottom",
+            x=1, y=-0.08,
+            xanchor="right", yanchor="top",
             showarrow=False,
             font=dict(size=10, color="gray"),
         )
