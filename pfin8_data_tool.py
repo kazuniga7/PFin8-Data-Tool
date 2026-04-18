@@ -285,13 +285,13 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             valid = [bar_option, h_bar_option]
             if n_x_groups > 1:
                 valid.append("Line Chart")
-    else:  # Total Correct
+    else:  # Number Correct
         valid = [bar_option, h_bar_option]
         if n_x_groups > 1:
             valid.append("Line Chart")
         # Stacked and pie only valid when full score range (0-8) is selected
         if n_total_correct == 9:
-            if axis_legend == "Total Correct" or n_legend_groups == 1:
+            if axis_legend == "Number Correct" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
     # Table available unless it would be a single data point
@@ -315,7 +315,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             "group_value": group_label,
             "topic": "Topic",
             "response_category": "Response Category",
-            "score_label": "Total Correct",
+            "score_label": "Number Correct",
         }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
@@ -678,7 +678,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         parts.append(f"**View:** {mode_text}")
     else:
         range_text = f"{selected_range[0]}–{selected_range[1]}" if selected_range else "0–8"
-        parts.append(f"**Total Correct Range:** {range_text}")
+        parts.append(f"**Number Correct Range:** {range_text}")
 
     if environment != "Over the Years" and analysis_variable:
         parts.append(f"**Analysis Variable:** {analysis_variable}")
@@ -810,17 +810,17 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander("Analysis Type", expanded=True):
             analysis_type = st.radio(
                 "Analysis Type",
-                ["Topic Bucket", "Total Correct"],
+                ["Topic Bucket", "Number Correct"],
                 help="Analyze by individual topic questions or total correct score",
                 label_visibility="collapsed",
             )
 
-        # Section 3: View Mode / Total Correct Range
+        # Section 3: View Mode / Number Correct Range
         view_mode = None
         selected_topics = None
         selected_range = None
 
-        _sec3_title = "View Mode" if analysis_type == "Topic Bucket" else "Total Correct Range"
+        _sec3_title = "View Mode" if analysis_type == "Topic Bucket" else "Number Correct Range"
         with st.expander(_sec3_title, expanded=True):
             if analysis_type == "Topic Bucket":
                 view_mode = st.radio(
@@ -839,7 +839,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     st.warning("Please select at least one topic.")
             else:
                 selected_range = st.slider(
-                    "Total Correct Range",
+                    "Number Correct Range",
                     min_value=0, max_value=8, value=(0, 8),
                     help="Filter the range of total correct scores",
                     label_visibility="collapsed",
@@ -1088,25 +1088,25 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     st.caption(f"Legend: **{axis_legend}**")
 
         else:
-            # 2 dimensions: Total Correct and Group
+            # 2 dimensions: Number Correct and Group
             if n_total_correct == 1 and n_group > 1:
                 axis_x = group_dim_label
-                axis_legend = "Total Correct"
+                axis_legend = "Number Correct"
                 single_group_value = TOTAL_CORRECT_LABELS.get(selected_range[0], str(selected_range[0])) if selected_range else None
             elif n_group == 1 and n_total_correct > 1:
-                axis_x = "Total Correct"
+                axis_x = "Number Correct"
                 axis_legend = group_dim_label
                 if environment == "Over the Years" and year_range:
                     single_group_value = str(year_range[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
             elif n_total_correct == 1 and n_group == 1:
-                axis_x = "Total Correct"
+                axis_x = "Number Correct"
                 axis_legend = group_dim_label
             else:
                 with st.expander("Axis Assignment", expanded=True):
                     axis_assignment_shown = True
-                    dimensions = ["Total Correct", group_dim_label]
+                    dimensions = ["Number Correct", group_dim_label]
                     axis_x = st.selectbox("X-Axis", dimensions, index=0)
                     axis_legend = [d for d in dimensions if d != axis_x][0]
                     st.caption(f"Legend: **{axis_legend}**")
@@ -1117,7 +1117,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_legend_groups = n_topics
         elif axis_legend == "Response Category":
             n_legend_groups = 3
-        elif axis_legend == "Total Correct":
+        elif axis_legend == "Number Correct":
             n_legend_groups = n_total_correct
         elif axis_legend == group_dim_label:
             n_legend_groups = n_group
@@ -1128,7 +1128,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_x_groups = n_topics
         elif axis_x == "Response Category":
             n_x_groups = 3
-        elif axis_x == "Total Correct":
+        elif axis_x == "Number Correct":
             n_x_groups = n_total_correct
         elif axis_x == group_dim_label:
             n_x_groups = n_group
@@ -1274,7 +1274,7 @@ def run_analysis(config, df_years, df_genpop):
     def dim_to_col(dim_name, mode="binary"):
         if dim_name == "Topic":
             return "topic"
-        elif dim_name == "Total Correct":
+        elif dim_name == "Number Correct":
             return "score_label"
         elif dim_name == "Response Category":
             return "response_category"
@@ -1347,13 +1347,13 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "Total Correct" if axis_x == "Total Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
-        legend_dim_label = "Total Correct" if axis_legend == "Total Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
+        x_dim_label = "Number Correct" if axis_x == "Number Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
+        legend_dim_label = "Number Correct" if axis_legend == "Number Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
         x_label = x_dim_label
-        title = f"P-Fin 8: Distribution of Total Correct — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of Total Correct — {x_dim_label} × {legend_dim_label}"
+        title = f"P-Fin 8: Distribution of Number Correct — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of Number Correct — {x_dim_label} × {legend_dim_label}"
 
         # Ensure score order
         if not chart_data.empty:
@@ -1378,7 +1378,7 @@ def run_analysis(config, df_years, df_genpop):
     elif legend_col == "topic":
         legend_label_text = "Topic"
     elif legend_col == "score_label":
-        legend_label_text = "Total Correct"
+        legend_label_text = "Number Correct"
     else:
         legend_label_text = group_label
 
@@ -1393,7 +1393,7 @@ def run_analysis(config, df_years, df_genpop):
         if chart_type == "Pie Chart":
             if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
                 pie_names = "response_category"
-            elif analysis_type == "Total Correct":
+            elif analysis_type == "Number Correct":
                 pie_names = "score_label"
 
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
@@ -1534,7 +1534,7 @@ def main():
         def axis_to_col(axis_name):
             if axis_name == "Topic":
                 return "topic"
-            elif axis_name == "Total Correct":
+            elif axis_name == "Number Correct":
                 return "score_label"
             elif axis_name == "Response Category":
                 return "response_category"
@@ -1585,7 +1585,7 @@ def main():
         pivot_df = pivot_df.reset_index()
 
         # Rename the index column for display
-        row_label = axis_x if axis_x in ["Topic", "Total Correct", "Response Category"] else config.get("group_dim_label", "Group")
+        row_label = axis_x if axis_x in ["Topic", "Number Correct", "Response Category"] else config.get("group_dim_label", "Group")
         pivot_df = pivot_df.rename(columns={row_col: row_label})
 
         # Maintain category order if applicable
