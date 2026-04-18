@@ -902,7 +902,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     age_errors = []
 
                     for i in range(num_groups):
-                        st.markdown(f"**Group {i+1}:**")
+                        st.markdown(f"**Age Group {i+1}:**")
                         col1, col2 = st.columns(2)
                         with col1:
                             start = st.number_input(
@@ -924,8 +924,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
                         # Validate: end must be >= start
                         if end < start:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
-                            age_errors.append(f"Group {i+1}: end < start")
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
+                            age_errors.append(f"Age Group {i+1}: end < start")
 
                         custom_age_groups.append((start, end))
 
@@ -937,8 +937,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             if g1_start <= g2_end and g2_start <= g1_end:
                                 overlap_start = max(g1_start, g2_start)
                                 overlap_end = min(g1_end, g2_end)
-                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
-                                age_errors.append(f"Groups {i+1} and {j+1} overlap")
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Age Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
+                                age_errors.append(f"Age Groups {i+1} and {j+1} overlap")
 
                     if age_errors:
                         st.error("Invalid groups — please adjust ranges")
