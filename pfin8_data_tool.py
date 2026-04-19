@@ -211,10 +211,14 @@ def run_sanity_checks(df, weight_col, result_data, environment, analysis_variabl
                 cat_check_col = col
                 break
         if group_check_col and cat_check_col:
+            # Only check sum-to-100% when all response categories are present
+            _all_resp = {"Correct", "Incorrect", "Don't Know"}
+            _present_cats = set(result_data[cat_check_col].unique()) if cat_check_col in result_data.columns else set()
+            _full_cats_present = not _present_cats or _present_cats >= _all_resp
             for grp_name, grp_data in result_data.groupby(group_check_col):
                 total = grp_data.groupby(cat_check_col)["percentage"].sum().sum()
                 # Only check if there's a facet (topic) or not
-                if "topic" in result_data.columns:
+                if _full_cats_present and "topic" in result_data.columns:
                     for topic, topic_data in grp_data.groupby("topic"):
                         t = topic_data["percentage"].sum()
                         if abs(t - 100) > 1:
