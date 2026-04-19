@@ -832,49 +832,11 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 )
                 if "Binary" in view_mode:
                     st.markdown("**Response**")
+                    st.caption("\\* Not Correct includes both Incorrect and Don't Know responses")
                     binary_response = st.radio(
                         "Response",
                         ["Correct", "Not Correct"],
                         label_visibility="collapsed",
-                    )
-                    st.markdown(
-                        """
-                        <style>
-                        .pfin8-tooltip {
-                            display: inline-block;
-                            margin-top: -2.1rem;
-                            margin-left: 7.2rem;
-                            position: relative;
-                            cursor: help;
-                            color: #888;
-                            font-size: 0.78rem;
-                        }
-                        .pfin8-tooltip .pfin8-tooltiptext {
-                            visibility: hidden;
-                            width: 220px;
-                            background-color: #333;
-                            color: #fff;
-                            text-align: left;
-                            border-radius: 5px;
-                            padding: 6px 8px;
-                            font-size: 0.75rem;
-                            position: absolute;
-                            z-index: 9999;
-                            left: 1.2rem;
-                            top: -0.3rem;
-                            opacity: 0;
-                            transition: opacity 0.2s;
-                        }
-                        .pfin8-tooltip:hover .pfin8-tooltiptext {
-                            visibility: visible;
-                            opacity: 1;
-                        }
-                        </style>
-                        <div class="pfin8-tooltip">ℹ️
-                            <span class="pfin8-tooltiptext">Not Correct includes both Incorrect and Don't Know responses</span>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
                     )
                     selected_response_cats = [binary_response]
                 else:
