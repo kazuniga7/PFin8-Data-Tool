@@ -264,7 +264,7 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 # CHART TYPE VALIDATION
 # ==============================================================================
-def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1, n_total_correct=9, n_x_groups=2):
+def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1, n_total_correct=9, n_x_groups=2, n_response_cats=None):
     valid = []
     # Bar and Grouped Bar are mutually exclusive based on legend group count
     if n_legend_groups == 1:
@@ -277,8 +277,9 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
     if analysis_type == "Topic Bucket":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
             valid = [bar_option, h_bar_option]
-            # Stacked and pie always valid for 3-category (Response Category always has 3 values)
-            if axis_legend == "Response Category" or n_legend_groups == 1:
+            # Stacked and pie only valid when all 3 response categories are selected
+            all_cats_selected = n_response_cats is None or n_response_cats == 3
+            if all_cats_selected and (axis_legend == "Response Category" or n_legend_groups == 1):
                 valid.append("Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
@@ -821,6 +822,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_range = None
 
         _sec2_title = "View Mode" if analysis_type == "Topic Bucket" else "Number Correct Range"
+        selected_response_cats = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Topic Bucket":
                 view_mode = st.radio(
@@ -828,6 +830,26 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
                     label_visibility="collapsed",
                 )
+                if "Binary" in view_mode:
+                    st.markdown("**Response**")
+                    st.caption("\\* Not Correct includes both Incorrect and Don't Know responses")
+                    binary_response = st.radio(
+                        "Response",
+                        ["Correct", "Not Correct"],
+                        label_visibility="collapsed",
+                    )
+                    selected_response_cats = [binary_response]
+                else:
+                    _all_resp_cats = ["Correct", "Incorrect", "Don't Know"]
+                    st.markdown("**Response Categories**")
+                    selected_response_cats = st.multiselect(
+                        "Response Categories",
+                        _all_resp_cats,
+                        default=_all_resp_cats,
+                        label_visibility="collapsed",
+                    )
+                    if not selected_response_cats:
+                        st.warning("Please select at least one response category.")
                 all_topics = list(TOPIC_NAMES.keys())
                 selected_topics = st.multiselect(
                     "Select Topics",
@@ -1027,6 +1049,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         single_group_value = None
         axis_assignment_shown = False
         _aa_info = None  # Info for deferred Axis Assignment expander
+        n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "3-Category" in view_mode else 1)
 
         if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
             dimensions = ["Topic", group_dim_label, "Response Category"]
@@ -1119,7 +1142,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         if axis_legend == "Topic":
             n_legend_groups = n_topics
         elif axis_legend == "Response Category":
-            n_legend_groups = 3
+            n_legend_groups = n_response_cats
         elif axis_legend == "Number Correct":
             n_legend_groups = n_total_correct
         elif axis_legend == group_dim_label:
@@ -1129,7 +1152,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         if axis_x == "Topic":
             n_x_groups = n_topics
         elif axis_x == "Response Category":
-            n_x_groups = 3
+            n_x_groups = n_response_cats
         elif axis_x == "Number Correct":
             n_x_groups = n_total_correct
         elif axis_x == group_dim_label:
@@ -1164,7 +1187,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
         # Section 6: Chart Type + Show percentages toggle
         with st.expander("Chart Type", expanded=True):
-            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups)
+            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups, n_response_cats)
             chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
 
             show_pct_labels = False
@@ -1190,6 +1213,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "group_dim_label": group_dim_label,
             "single_group_value": single_group_value,
             "show_pct_labels": show_pct_labels,
+            "selected_response_cats": selected_response_cats,
         }
 
 
@@ -1314,11 +1338,21 @@ def run_analysis(config, df_years, df_genpop):
         if not selected_topics:
             return None, None, None, None, None
 
+        selected_response_cats = config.get("selected_response_cats")
+
         if view_mode and "Binary" in view_mode:
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_binary_data(df, topics_map, group_col, group_label)
             hover_mode = "binary"
-            y_label = "% Correct"
+            # Flip percentage if "Not Correct" is selected
+            _show_not_correct = selected_response_cats and selected_response_cats == ["Not Correct"]
+            if _show_not_correct:
+                chart_data["percentage"] = 100 - chart_data["percentage"]
+                y_label = "% Not Correct"
+                _metric_label = "% Not Correct"
+            else:
+                y_label = "% Correct"
+                _metric_label = "% Correct"
 
             # Assign axes
             x_col = dim_to_col(axis_x)
@@ -1329,11 +1363,14 @@ def run_analysis(config, df_years, df_genpop):
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
             x_label = x_dim_label
-            title = f"P-Fin 8: % Correct — {single_group_value}" if single_group_value else f"P-Fin 8: % Correct — {x_dim_label} × {legend_dim_label}"
+            title = f"P-Fin 8: {_metric_label} — {single_group_value}" if single_group_value else f"P-Fin 8: {_metric_label} — {x_dim_label} × {legend_dim_label}"
 
         else:
             topics_map = {k: v for k, v in TOPIC_CAT3_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_cat3_data(df, topics_map, group_col, group_label)
+            # Filter to selected response categories
+            if selected_response_cats:
+                chart_data = chart_data[chart_data["response_category"].isin(selected_response_cats)]
             hover_mode = "cat3"
             y_label = "% of Respondents"
 
@@ -1457,7 +1494,7 @@ def render_debug_panel(checks):
     if not DEBUG_MODE or checks is None:
         return
 
-    with st.expander("🔧 Debug: Validation Panel", expanded=False):
+    with st.expander("🔧 Debug: Validation Panel", expanded=True):
         col1, col2, col3 = st.columns(3)
 
         with col1:
