@@ -1054,43 +1054,69 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "3-Category" in view_mode else 1)
 
         if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
-            dimensions = ["Topic", group_dim_label, "Response Category"]
-
-            if n_topics == 1 and n_group == 1:
-                axis_x = "Response Category"
-                axis_legend = "Topic"
-                axis_facet = group_dim_label
-                single_group_value = selected_topics[0] if selected_topics else None
-            elif n_topics == 1 and n_group > 1:
-                single_group_value = selected_topics[0] if selected_topics else None
-                remaining = [d for d in dimensions if d != "Topic"]
-                axis_assignment_shown = True
-                _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
-                _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
-                axis_x = _curr_x if _curr_x in remaining else remaining[0]
-                axis_legend = [d for d in remaining if d != axis_x][0]
-                axis_facet = "Topic"
-            elif n_group == 1 and n_topics > 1:
-                if environment == "Over the Years" and year_range:
-                    single_group_value = str(year_range[0])
-                elif subgroups and len(subgroups) == 1:
-                    single_group_value = str(subgroups[0])
-                remaining = [d for d in dimensions if d != group_dim_label]
-                axis_assignment_shown = True
-                _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
-                _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
-                axis_x = _curr_x if _curr_x in remaining else remaining[0]
-                axis_legend = [d for d in remaining if d != axis_x][0]
-                axis_facet = group_dim_label
+            if n_response_cats == 1:
+                # Single response category selected — treat as 2-way (Topic vs group)
+                axis_facet = None
+                if n_topics == 1 and n_group == 1:
+                    axis_x = "Topic"
+                    axis_legend = group_dim_label
+                    single_group_value = selected_topics[0] if selected_topics else None
+                elif n_topics == 1 and n_group > 1:
+                    axis_x = group_dim_label
+                    axis_legend = "Topic"
+                    single_group_value = selected_topics[0] if selected_topics else None
+                elif n_group == 1 and n_topics > 1:
+                    axis_x = "Topic"
+                    axis_legend = group_dim_label
+                    if environment == "Over the Years" and year_range:
+                        single_group_value = str(year_range[0])
+                    elif subgroups and len(subgroups) == 1:
+                        single_group_value = str(subgroups[0])
+                else:
+                    axis_assignment_shown = True
+                    _dim2 = ["Topic", group_dim_label]
+                    _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
+                    _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
+                    axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
+                    axis_legend = [d for d in _dim2 if d != axis_x][0]
             else:
-                axis_assignment_shown = True
-                _aa_info = {'type': 'three_way', 'options': dimensions, 'default_x_idx': 1}
-                _curr_x = st.session_state.get('pfin8_aa_x', dimensions[1])
-                axis_x = _curr_x if _curr_x in dimensions else dimensions[1]
-                _rem = [d for d in dimensions if d != axis_x]
-                _curr_legend = st.session_state.get('pfin8_aa_legend', _rem[0])
-                axis_legend = _curr_legend if _curr_legend in _rem else _rem[0]
-                axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
+                dimensions = ["Topic", group_dim_label, "Response Category"]
+
+                if n_topics == 1 and n_group == 1:
+                    axis_x = "Response Category"
+                    axis_legend = "Topic"
+                    axis_facet = group_dim_label
+                    single_group_value = selected_topics[0] if selected_topics else None
+                elif n_topics == 1 and n_group > 1:
+                    single_group_value = selected_topics[0] if selected_topics else None
+                    remaining = [d for d in dimensions if d != "Topic"]
+                    axis_assignment_shown = True
+                    _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
+                    _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
+                    axis_x = _curr_x if _curr_x in remaining else remaining[0]
+                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    axis_facet = "Topic"
+                elif n_group == 1 and n_topics > 1:
+                    if environment == "Over the Years" and year_range:
+                        single_group_value = str(year_range[0])
+                    elif subgroups and len(subgroups) == 1:
+                        single_group_value = str(subgroups[0])
+                    remaining = [d for d in dimensions if d != group_dim_label]
+                    axis_assignment_shown = True
+                    _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
+                    _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
+                    axis_x = _curr_x if _curr_x in remaining else remaining[0]
+                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    axis_facet = group_dim_label
+                else:
+                    axis_assignment_shown = True
+                    _aa_info = {'type': 'three_way', 'options': dimensions, 'default_x_idx': 1}
+                    _curr_x = st.session_state.get('pfin8_aa_x', dimensions[1])
+                    axis_x = _curr_x if _curr_x in dimensions else dimensions[1]
+                    _rem = [d for d in dimensions if d != axis_x]
+                    _curr_legend = st.session_state.get('pfin8_aa_legend', _rem[0])
+                    axis_legend = _curr_legend if _curr_legend in _rem else _rem[0]
+                    axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
 
         elif analysis_type == "Topic Bucket":
             if n_topics == 1 and n_group > 1:
@@ -1376,7 +1402,10 @@ def run_analysis(config, df_years, df_genpop):
             if selected_response_cats:
                 chart_data = chart_data[chart_data["response_category"].isin(selected_response_cats)]
             hover_mode = "cat3"
-            y_label = "% of Respondents"
+            if selected_response_cats and len(selected_response_cats) == 1:
+                y_label = f"% {selected_response_cats[0]}"
+            else:
+                y_label = "% of Respondents"
 
             # Assign axes for 3 dimensions
             x_col = dim_to_col(axis_x, "cat3")
