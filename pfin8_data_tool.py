@@ -1341,6 +1341,8 @@ def run_analysis(config, df_years, df_genpop):
             return None, None, None, None, None
 
         selected_response_cats = config.get("selected_response_cats")
+        if view_mode and "3-Category" in view_mode and selected_response_cats is not None and not selected_response_cats:
+            return None, None, None, None, None
 
         if view_mode and "Binary" in view_mode:
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
