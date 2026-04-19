@@ -1399,7 +1399,8 @@ def run_analysis(config, df_years, df_genpop):
 
             # Set category orders for response_category if used
             if "response_category" in [x_col, legend_col, facet_col]:
-                category_orders["response_category"] = ["Correct", "Incorrect", "Don't Know"]
+                _full_cat_order = ["Correct", "Incorrect", "Don't Know"]
+                category_orders["response_category"] = [c for c in _full_cat_order if not selected_response_cats or c in selected_response_cats]
 
     else:
         selected_range = config["selected_range"]
