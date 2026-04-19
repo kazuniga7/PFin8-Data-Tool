@@ -831,12 +831,10 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     label_visibility="collapsed",
                 )
                 if "Binary" in view_mode:
-                    st.markdown("**Response**")
-                    st.caption("\\* Not Correct includes both Incorrect and Don't Know responses")
                     binary_response = st.radio(
                         "Response",
                         ["Correct", "Not Correct"],
-                        label_visibility="collapsed",
+                        help="Not Correct includes both Incorrect and Don't Know responses",
                     )
                     selected_response_cats = [binary_response]
                 else:
