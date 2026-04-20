@@ -923,7 +923,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         view_mode = None
         selected_range = None
 
-        _sec2_title = "Calculate percentages by . . ." if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
+        _sec2_title = "Calculate response percentages by . . ." if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
@@ -1015,8 +1015,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     }
             elif analysis_type == "Topic":
                 view_mode = st.radio(
-                    "Calculate percentages by . . .",
-                    ["Single Measure: % Correct or % Not Correct", "% of Respondents by Response Category (Correct, Incorrect, Don't Know)"],
+                    "Calculate response percentages by . . .",
+                    ["Single Measure (Correct or Not Correct)", "Response Category (Correct, Incorrect, Don't Know)"],
                     label_visibility="collapsed",
                 )
                 if "Single Measure" in view_mode:
