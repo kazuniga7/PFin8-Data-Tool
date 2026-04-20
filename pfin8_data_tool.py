@@ -905,9 +905,22 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 label_visibility="collapsed",
             )
 
-        # Section 2: View Mode / Number Correct Range
-        view_mode = None
+        # Section 2: Topic selector (only for Topic analysis)
         selected_topics = None
+        if analysis_type == "Topic":
+            with st.expander("Analyze the topics on . . .", expanded=True):
+                all_topics = list(TOPIC_NAMES.keys())
+                selected_topics = st.multiselect(
+                    "Select Topics",
+                    all_topics,
+                    default=all_topics,
+                    label_visibility="collapsed",
+                )
+                if not selected_topics:
+                    st.warning("Please select at least one topic.")
+
+        # Section 3: View Mode / Number Correct Range
+        view_mode = None
         selected_range = None
 
         _sec2_title = "View Mode" if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
@@ -1024,15 +1037,6 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     )
                     if not selected_response_cats:
                         st.warning("Please select at least one response category.")
-                all_topics = list(TOPIC_NAMES.keys())
-                selected_topics = st.multiselect(
-                    "Select Topics",
-                    all_topics,
-                    default=all_topics,
-                    help="Choose which P-Fin 8 topics to include",
-                )
-                if not selected_topics:
-                    st.warning("Please select at least one topic.")
             elif analysis_type == "Number Correct":
                 _all_scores = list(range(9))
                 for _s in _all_scores:
