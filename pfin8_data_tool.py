@@ -839,10 +839,17 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_topics = None
         selected_range = None
 
-        _sec2_title = "View Mode" if analysis_type == "Topic Bucket" else "Number Correct Range"
+        _sec2_title = "View Mode" if analysis_type in ("Topic Bucket", "Distribution of Responses") else "Number Correct Range"
         selected_response_cats = None
+        dist_response_cat = None
         with st.expander(_sec2_title, expanded=True):
-            if analysis_type == "Topic Bucket":
+            if analysis_type == "Distribution of Responses":
+                dist_response_cat = st.radio(
+                    "Response",
+                    ["Correct", "Incorrect", "Don't Know"],
+                    label_visibility="collapsed",
+                )
+            elif analysis_type == "Topic Bucket":
                 view_mode = st.radio(
                     "View Mode",
                     ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
@@ -875,7 +882,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 )
                 if not selected_topics:
                     st.warning("Please select at least one topic.")
-            else:
+            elif analysis_type == "Number Correct":
                 _all_scores = list(range(9))
                 for _s in _all_scores:
                     if f"nc_cb_{_s}" not in st.session_state:
@@ -1288,6 +1295,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "single_group_value": single_group_value,
             "show_pct_labels": show_pct_labels,
             "selected_response_cats": selected_response_cats,
+            "dist_response_cat": dist_response_cat,
         }
 
 
