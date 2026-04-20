@@ -908,7 +908,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         # Section 2: Topic selector (only for Topic analysis)
         selected_topics = None
         if analysis_type == "Topic":
-            with st.expander("Analyze the topics on . . .", expanded=True):
+            with st.expander("Choose topics . . .", expanded=True):
                 all_topics = list(TOPIC_NAMES.keys())
                 selected_topics = st.multiselect(
                     "Select Topics",
