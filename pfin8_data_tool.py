@@ -895,12 +895,27 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander(_sec4_title, expanded=True):
             if environment == "Over the Years":
                 _all_years = sorted([int(y) for y in df_years["survey_year"].unique()])
-                selected_years = st.multiselect(
-                    "Years",
-                    _all_years,
-                    default=_all_years,
-                    label_visibility="collapsed",
-                )
+                # Initialize checkboxes to True on first load
+                for _y in _all_years:
+                    if f"year_cb_{_y}" not in st.session_state:
+                        st.session_state[f"year_cb_{_y}"] = True
+                # Select All / Deselect All buttons
+                _btn_col1, _btn_col2 = st.columns(2)
+                with _btn_col1:
+                    if st.button("Select All", key="year_select_all", use_container_width=True):
+                        for _y in _all_years:
+                            st.session_state[f"year_cb_{_y}"] = True
+                with _btn_col2:
+                    if st.button("Deselect All", key="year_deselect_all", use_container_width=True):
+                        for _y in _all_years:
+                            st.session_state[f"year_cb_{_y}"] = False
+                # 2-column checkbox grid
+                _cb_col1, _cb_col2 = st.columns(2)
+                selected_years = []
+                for _i, _y in enumerate(_all_years):
+                    with _cb_col1 if _i % 2 == 0 else _cb_col2:
+                        if st.checkbox(str(_y), key=f"year_cb_{_y}"):
+                            selected_years.append(_y)
                 if not selected_years:
                     st.warning("Please select at least one year.")
 
