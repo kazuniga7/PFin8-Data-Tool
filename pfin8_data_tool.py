@@ -268,7 +268,7 @@ def weighted_total_correct_distribution(df, weight_col="survey_weight"):
 # ==============================================================================
 # CHART TYPE VALIDATION
 # ==============================================================================
-def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1, n_total_correct=9, n_x_groups=2, n_response_cats=None):
+def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=None, n_legend_groups=1, n_total_correct=9, n_x_groups=2, n_response_cats=None, dist_ranges_cover_all=False):
     valid = []
     # Bar and Grouped Bar are mutually exclusive based on legend group count
     if n_legend_groups == 1:
@@ -291,6 +291,16 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             valid = [bar_option, h_bar_option]
             if n_x_groups > 1:
                 valid.append("Line Chart")
+    elif analysis_type == "Distribution of Responses":
+        valid = [bar_option, h_bar_option]
+        if n_x_groups > 1:
+            valid.append("Line Chart")
+        # Stacked and pie only valid when ranges cover 0–8 completely
+        if dist_ranges_cover_all:
+            if axis_legend == "Distribution Range" or n_legend_groups == 1:
+                valid.append("Stacked Bar Chart")
+                valid.append("Horizontal Stacked Bar Chart")
+                valid.append("Pie Chart")
     else:  # Number Correct
         valid = [bar_option, h_bar_option]
         if n_x_groups > 1:
@@ -323,6 +333,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             "topic": "Topic",
             "response_category": "Response Category",
             "score_label": "Number Correct",
+            "range_label": "Distribution Range",
         }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
@@ -689,7 +700,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 # DESCRIPTIVE NOTE GENERATION
 # ==============================================================================
 def generate_note(environment, analysis_type, view_mode, selected_topics, selected_range,
-                  analysis_variable, subgroups, n_obs, dataset_name, year_range=None):
+                  analysis_variable, subgroups, n_obs, dataset_name, year_range=None,
+                  dist_response_cat=None, dist_range_mode=None, dist_buckets=None, dist_custom_ranges=None):
     parts = []
     parts.append("**Data Source:** TIAA G-Flec Personal Finance Index")
 
@@ -704,6 +716,14 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         mode_text = "binary (correct vs. not correct)" if "Binary" in view_mode else "3-category (correct, incorrect, don't know)"
         parts.append(f"**Topics:** {topics_text}")
         parts.append(f"**View:** {mode_text}")
+    elif analysis_type == "Distribution of Responses":
+        parts.append(f"**Response Type:** {dist_response_cat or 'N/A'}")
+        if dist_range_mode == "Buckets":
+            _range_text = ", ".join(dist_buckets) if dist_buckets else "All Buckets"
+        else:
+            _labels = dist_custom_ranges.get("labels", []) if dist_custom_ranges else []
+            _range_text = ", ".join(_labels) if _labels else "Custom Ranges"
+        parts.append(f"**Ranges:** {_range_text}")
     else:
         range_text = ", ".join(TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range)) if selected_range else "0–8"
         parts.append(f"**Number Correct Range:** {range_text}")
@@ -769,6 +789,37 @@ def prepare_total_correct_data(df, group_col, weight_col="survey_weight", score_
     return pd.DataFrame(rows)
 
 
+def prepare_dist_responses_data(df, response_cat, group_col, weight_col="survey_weight",
+                                 ranges=None, range_labels=None):
+    """
+    For each respondent count how many of the 8 P-Fin topics they answered with
+    response_cat (Correct / Incorrect / Don't Know), then bucket by ranges.
+    Returns DataFrame with: group_value, range_label, percentage, n, range_order
+    """
+    cat3_cols = [c for c in TOPIC_CAT3_NAMES.values() if c in df.columns]
+    df = df.copy()
+    df["_resp_count"] = df[cat3_cols].apply(
+        lambda row: sum(1 for v in row if v == response_cat), axis=1
+    )
+    rows = []
+    for group_val, group_df in df.groupby(group_col):
+        valid = group_df.dropna(subset=[weight_col])
+        total_weight = valid[weight_col].sum()
+        n = len(valid)
+        for order_idx, ((start, end), label) in enumerate(zip(ranges, range_labels)):
+            mask = (valid["_resp_count"] >= start) & (valid["_resp_count"] <= end)
+            subset = valid[mask]
+            pct = subset[weight_col].sum() / total_weight * 100 if total_weight > 0 else 0
+            rows.append({
+                "group_value": str(group_val),
+                "range_label": label,
+                "percentage": pct,
+                "n": n,
+                "range_order": order_idx,
+            })
+    return pd.DataFrame(rows)
+
+
 def get_category_order(col_name):
     orders = {
         "age_category": AGE_BUCKET_ORDER,
@@ -779,6 +830,26 @@ def get_category_order(col_name):
         "worktime_thinking_finances": THINKING_TIME_ORDER,
     }
     return orders.get(col_name)
+
+
+def dist_ranges_covers_all(range_mode, buckets, custom_ranges):
+    """Returns True if the selected ranges cover 0–8 completely with no gaps."""
+    if range_mode == "Buckets":
+        _all = {"0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"}
+        return buckets is not None and set(buckets) == _all
+    elif range_mode == "Custom Ranges" and custom_ranges:
+        if custom_ranges.get("errors"):
+            return False
+        groups = sorted(custom_ranges["groups"], key=lambda x: x[0])
+        if not groups:
+            return False
+        if groups[0][0] != 0 or groups[-1][1] != 8:
+            return False
+        for i in range(len(groups) - 1):
+            if groups[i][1] + 1 != groups[i + 1][0]:
+                return False
+        return True
+    return False
 
 
 # ==============================================================================
@@ -1176,6 +1247,17 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         n_topics = len(selected_topics) if selected_topics else 8
         n_total_correct = len(selected_range) if selected_range else 9
 
+        # Distribution of Responses range count
+        dist_range_dim_label = "Distribution Range"
+        n_dist_ranges = 1
+        if analysis_type == "Distribution of Responses":
+            if dist_range_mode == "Buckets" and dist_buckets:
+                n_dist_ranges = len(dist_buckets)
+            elif dist_range_mode == "Custom Ranges" and dist_custom_ranges and not dist_custom_ranges.get("errors"):
+                n_dist_ranges = len(dist_custom_ranges["groups"])
+            else:
+                n_dist_ranges = 1
+
         # Count group dimension values
         if environment == "Over the Years":
             n_group = len(selected_years) if selected_years else 10
@@ -1283,6 +1365,28 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
                 axis_legend = [d for d in _dim2 if d != axis_x][0]
 
+        elif analysis_type == "Distribution of Responses":
+            if n_dist_ranges == 1 and n_group > 1:
+                axis_x = group_dim_label
+                axis_legend = dist_range_dim_label
+            elif n_group == 1 and n_dist_ranges > 1:
+                axis_x = dist_range_dim_label
+                axis_legend = group_dim_label
+                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                    single_group_value = str(selected_years[0])
+                elif subgroups and len(subgroups) == 1:
+                    single_group_value = str(subgroups[0])
+            elif n_dist_ranges == 1 and n_group == 1:
+                axis_x = dist_range_dim_label
+                axis_legend = group_dim_label
+            else:
+                axis_assignment_shown = True
+                _dim2 = [dist_range_dim_label, group_dim_label]
+                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
+                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
+                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
+                axis_legend = [d for d in _dim2 if d != axis_x][0]
+
         else:
             if n_total_correct == 1 and n_group > 1:
                 axis_x = group_dim_label
@@ -1314,6 +1418,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_legend_groups = n_response_cats
         elif axis_legend == "Number Correct":
             n_legend_groups = n_total_correct
+        elif axis_legend == dist_range_dim_label:
+            n_legend_groups = n_dist_ranges
         elif axis_legend == group_dim_label:
             n_legend_groups = n_group
 
@@ -1324,6 +1430,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_x_groups = n_response_cats
         elif axis_x == "Number Correct":
             n_x_groups = n_total_correct
+        elif axis_x == dist_range_dim_label:
+            n_x_groups = n_dist_ranges
         elif axis_x == group_dim_label:
             n_x_groups = n_group
 
@@ -1356,7 +1464,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
         # Section 6: Chart Type + Show percentages toggle
         with st.expander("Chart Type", expanded=True):
-            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups, n_response_cats)
+            _dist_covers_all = dist_ranges_covers_all(dist_range_mode, dist_buckets, dist_custom_ranges)
+            valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups, n_response_cats, dist_ranges_cover_all=_dist_covers_all)
             chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
 
             show_pct_labels = False
@@ -1387,6 +1496,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "dist_range_mode": dist_range_mode,
             "dist_buckets": dist_buckets,
             "dist_custom_ranges": dist_custom_ranges,
+            "n_dist_ranges": n_dist_ranges,
+            "dist_range_dim_label": dist_range_dim_label,
         }
 
 
@@ -1497,6 +1608,8 @@ def run_analysis(config, df_years, df_genpop):
     axis_facet = config.get("axis_facet")
     single_group_value = config.get("single_group_value")
 
+    dist_range_dim_label = config.get("dist_range_dim_label", "Distribution Range")
+
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
         if dim_name == "Topic":
@@ -1505,6 +1618,8 @@ def run_analysis(config, df_years, df_genpop):
             return "score_label"
         elif dim_name == "Response Category":
             return "response_category"
+        elif dim_name == dist_range_dim_label:
+            return "range_label"
         else:  # group dimension
             return "group_value"
 
@@ -1584,6 +1699,74 @@ def run_analysis(config, df_years, df_genpop):
                 _full_cat_order = ["Correct", "Incorrect", "Don't Know"]
                 category_orders["response_category"] = [c for c in _full_cat_order if not selected_response_cats or c in selected_response_cats]
 
+    elif analysis_type == "Distribution of Responses":
+        dist_response_cat = config["dist_response_cat"]
+        dist_range_mode_val = config["dist_range_mode"]
+        dist_buckets_val = config["dist_buckets"]
+        dist_custom_ranges_val = config["dist_custom_ranges"]
+
+        if not dist_response_cat:
+            return None, None, None, None, None
+
+        _bucket_map = {
+            "0-2 (<26%)": (0, 2),
+            "3-4 (26%-50%)": (3, 4),
+            "5-6 (51%-75%)": (5, 6),
+            "7-8 (76%-100%)": (7, 8),
+        }
+
+        if dist_range_mode_val == "Buckets":
+            if not dist_buckets_val:
+                return None, None, None, None, None
+            _ordered_buckets = [b for b in _bucket_map if b in dist_buckets_val]
+            ranges = [_bucket_map[b] for b in _ordered_buckets]
+            range_labels = list(_ordered_buckets)
+        else:  # Custom Ranges
+            if not dist_custom_ranges_val or dist_custom_ranges_val.get("errors"):
+                return None, None, None, None, None
+            ranges = dist_custom_ranges_val["groups"]
+            range_labels = dist_custom_ranges_val["labels"]
+
+        chart_data = prepare_dist_responses_data(
+            df, dist_response_cat, group_col,
+            ranges=ranges, range_labels=range_labels
+        )
+        hover_mode = "total_correct"
+        y_label = "% of Respondents"
+
+        # Assign axes
+        x_col = dim_to_col(axis_x)
+        legend_col = dim_to_col(axis_legend)
+        x_dim_label = dist_range_dim_label if axis_x == dist_range_dim_label else (
+            "Response" if environment == "Financial Well-Being" else group_label
+        )
+        legend_dim_label = dist_range_dim_label if axis_legend == dist_range_dim_label else (
+            "Response" if environment == "Financial Well-Being" else group_label
+        )
+
+        # For stacked/pie, range_label must be in legend (color)
+        if chart_type in ["Stacked Bar Chart", "Horizontal Stacked Bar Chart", "Pie Chart"] and x_col == "range_label":
+            x_col, legend_col = legend_col, x_col
+            x_dim_label, legend_dim_label = legend_dim_label, x_dim_label
+
+        chart_data["x"] = chart_data[x_col]
+        color_col = legend_col
+        x_label = x_dim_label
+
+        title = (
+            f"P-Fin 8: Distribution of {dist_response_cat} Responses — {single_group_value}"
+            if single_group_value
+            else f"P-Fin 8: Distribution of {dist_response_cat} Responses — {x_dim_label} × {legend_dim_label}"
+        )
+
+        # Category order for range_label
+        if range_labels:
+            category_orders["range_label"] = range_labels
+            if x_col == "range_label":
+                category_orders["x"] = range_labels
+
+        use_facet = None
+
     else:
         selected_range = config["selected_range"]
         if not selected_range:
@@ -1624,6 +1807,8 @@ def run_analysis(config, df_years, df_genpop):
         legend_label_text = "Topic"
     elif legend_col == "score_label":
         legend_label_text = "Number Correct"
+    elif legend_col == "range_label":
+        legend_label_text = "Distribution Range"
     else:
         legend_label_text = group_label
 
@@ -1640,6 +1825,8 @@ def run_analysis(config, df_years, df_genpop):
                 pie_names = "response_category"
             elif analysis_type == "Number Correct":
                 pie_names = "score_label"
+            elif analysis_type == "Distribution of Responses":
+                pie_names = "range_label"
 
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
                            category_orders, group_label=legend_label_text, hover_mode=hover_mode,
@@ -1659,6 +1846,10 @@ def run_analysis(config, df_years, df_genpop):
         n_obs=len(df),
         dataset_name=dataset_name,
         year_range=config.get("selected_years"),
+        dist_response_cat=config.get("dist_response_cat"),
+        dist_range_mode=config.get("dist_range_mode"),
+        dist_buckets=config.get("dist_buckets"),
+        dist_custom_ranges=config.get("dist_custom_ranges"),
     )
 
     # Run sanity checks
@@ -1776,6 +1967,7 @@ def main():
         view_mode = config.get("view_mode", "")
 
         # Map axis selections to data column names
+        _dist_range_dim_label = config.get("dist_range_dim_label", "Distribution Range")
         def axis_to_col(axis_name):
             if axis_name == "Topic":
                 return "topic"
@@ -1783,6 +1975,8 @@ def main():
                 return "score_label"
             elif axis_name == "Response Category":
                 return "response_category"
+            elif axis_name == _dist_range_dim_label:
+                return "range_label"
             else:
                 return "group_value"
 
