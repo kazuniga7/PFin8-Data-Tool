@@ -296,7 +296,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
         if n_x_groups > 1:
             valid.append("Line Chart")
         # Stacked and pie only valid when full score range (0-8) is selected
-        if n_total_correct == 9:
+        if n_total_correct >= 9:
             if axis_legend == "Number Correct" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Horizontal Stacked Bar Chart")
@@ -705,7 +705,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         parts.append(f"**Topics:** {topics_text}")
         parts.append(f"**View:** {mode_text}")
     else:
-        range_text = f"{selected_range[0]}–{selected_range[1]}" if selected_range else "0–8"
+        range_text = ", ".join(TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range)) if selected_range else "0–8"
         parts.append(f"**Number Correct Range:** {range_text}")
 
     if environment != "Over the Years" and analysis_variable:
@@ -757,7 +757,7 @@ def prepare_total_correct_data(df, group_col, weight_col="survey_weight", score_
     for group_val, group_df in df.groupby(group_col):
         dist = weighted_total_correct_distribution(group_df, weight_col)
         if score_range:
-            dist = dist[dist["score"].between(score_range[0], score_range[1])]
+            dist = dist[dist["score"].isin(score_range)]
         for _, row in dist.iterrows():
             rows.append({
                 "score_label": row["score_label"],
@@ -876,12 +876,27 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 if not selected_topics:
                     st.warning("Please select at least one topic.")
             else:
-                selected_range = st.slider(
-                    "Number Correct Range",
-                    min_value=0, max_value=8, value=(0, 8),
-                    help="Filter the range of total correct scores",
-                    label_visibility="collapsed",
-                )
+                _all_scores = list(range(9))
+                for _s in _all_scores:
+                    if f"nc_cb_{_s}" not in st.session_state:
+                        st.session_state[f"nc_cb_{_s}"] = True
+                _nc_btn1, _nc_btn2 = st.columns(2)
+                with _nc_btn1:
+                    if st.button("Select All", key="nc_select_all", use_container_width=True):
+                        for _s in _all_scores:
+                            st.session_state[f"nc_cb_{_s}"] = True
+                with _nc_btn2:
+                    if st.button("Deselect All", key="nc_deselect_all", use_container_width=True):
+                        for _s in _all_scores:
+                            st.session_state[f"nc_cb_{_s}"] = False
+                _nc_col1, _nc_col2 = st.columns(2)
+                selected_range = []
+                for _i, _s in enumerate(_all_scores):
+                    with _nc_col1 if _i % 2 == 0 else _nc_col2:
+                        if st.checkbox(TOTAL_CORRECT_LABELS[_s], key=f"nc_cb_{_s}"):
+                            selected_range.append(_s)
+                if not selected_range:
+                    st.warning("Please select at least one score.")
 
         # Section 3: Exploration Type
         with st.expander("Exploration Type", expanded=True):
@@ -1064,7 +1079,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
         # Compute dimension sizes to determine if axis assignment should be shown
         n_topics = len(selected_topics) if selected_topics else 8
-        n_total_correct = (selected_range[1] - selected_range[0] + 1) if selected_range else 9
+        n_total_correct = len(selected_range) if selected_range else 9
 
         # Count group dimension values
         if environment == "Over the Years":
@@ -1177,7 +1192,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             if n_total_correct == 1 and n_group > 1:
                 axis_x = group_dim_label
                 axis_legend = "Number Correct"
-                single_group_value = TOTAL_CORRECT_LABELS.get(selected_range[0], str(selected_range[0])) if selected_range else None
+                single_group_value = TOTAL_CORRECT_LABELS.get(selected_range[0], str(selected_range[0])) if selected_range and len(selected_range) == 1 else None
             elif n_group == 1 and n_total_correct > 1:
                 axis_x = "Number Correct"
                 axis_legend = group_dim_label
@@ -1472,6 +1487,8 @@ def run_analysis(config, df_years, df_genpop):
 
     else:
         selected_range = config["selected_range"]
+        if not selected_range:
+            return None, None, None, None, None
         chart_data = prepare_total_correct_data(df, group_col, score_range=selected_range)
         hover_mode = "total_correct"
         y_label = "% of Respondents"
@@ -1489,10 +1506,7 @@ def run_analysis(config, df_years, df_genpop):
 
         # Ensure score order
         if not chart_data.empty:
-            score_labels = [TOTAL_CORRECT_LABELS[i] for i in range(
-                selected_range[0] if selected_range else 0,
-                (selected_range[1] if selected_range else 8) + 1
-            )]
+            score_labels = [TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range) if i in TOTAL_CORRECT_LABELS]
             category_orders["score_label"] = score_labels
             if x_col == "score_label":
                 category_orders["x"] = score_labels
