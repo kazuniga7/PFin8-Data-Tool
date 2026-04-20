@@ -1021,7 +1021,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 )
                 if "Single Measure" in view_mode:
                     binary_response = st.radio(
-                        "Response",
+                        "Response Measure",
                         ["Correct", "Not Correct"],
                         help="Not Correct includes both Incorrect and Don't Know responses",
                     )
