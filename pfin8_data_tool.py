@@ -285,6 +285,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             all_cats_selected = n_response_cats is None or n_response_cats == 3
             if all_cats_selected and (axis_legend == "Response Category" or n_legend_groups == 1):
                 valid.append("Stacked Bar Chart")
+                valid.append("Horizontal Stacked Bar Chart")
                 valid.append("Pie Chart")
         else:
             valid = [bar_option, h_bar_option]
@@ -298,6 +299,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
         if n_total_correct == 9:
             if axis_legend == "Number Correct" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
+                valid.append("Horizontal Stacked Bar Chart")
                 valid.append("Pie Chart")
     # Table available unless it would be a single data point
     if not (n_x_groups == 1 and n_legend_groups == 1):
@@ -370,10 +372,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 color_discrete_sequence=streamlit_colors,
                 **facet_args,
             )
-        elif chart_type == "Stacked Bar Chart":
+        elif chart_type in ["Stacked Bar Chart", "Horizontal Stacked Bar Chart"]:
             fig = px.bar(
-                chart_data, x="x", y="percentage",
+                chart_data,
+                x="percentage" if chart_type == "Horizontal Stacked Bar Chart" else "x",
+                y="x" if chart_type == "Horizontal Stacked Bar Chart" else "percentage",
                 color=color_col, barmode="stack",
+                orientation="h" if chart_type == "Horizontal Stacked Bar Chart" else "v",
                 title=title, labels=label_map,
                 category_orders=category_orders,
                 color_discrete_sequence=streamlit_colors,
@@ -584,7 +589,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 )
                 # Clean up facet titles
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-            elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart"]:
+            elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart", "Horizontal Stacked Bar Chart"]:
                 fig.update_layout(
                     yaxis_title=x_label,
                     xaxis_title=y_label,
@@ -616,7 +621,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
             # Cap bar width when there are 4 or fewer x-axis categories
             # Only for stacked bars — use bargap to add space around bars
-            if chart_type == "Stacked Bar Chart":
+            if chart_type in ["Stacked Bar Chart", "Horizontal Stacked Bar Chart"]:
                 n_x_categories = chart_data["x"].nunique()
                 if n_x_categories == 1:
                     fig.update_layout(bargap=0.8)
@@ -632,11 +637,12 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
             # Add percentage labels on bars
-            if show_pct_labels and chart_type == "Stacked Bar Chart":
+            if show_pct_labels and chart_type in ["Stacked Bar Chart", "Horizontal Stacked Bar Chart"]:
                 # For stacked bars, threshold is segments per bar (n_legend_groups)
                 if not n_legend_groups or n_legend_groups <= 10:
+                    _tmpl = "%{x:.0f}%" if chart_type == "Horizontal Stacked Bar Chart" else "%{y:.0f}%"
                     fig.update_traces(
-                        texttemplate="%{y:.0f}%",
+                        texttemplate=_tmpl,
                         textposition="inside",
                         insidetextfont=dict(color="black"),
                     )
@@ -1235,7 +1241,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
             show_pct_labels = False
             if chart_type in ["Bar Chart", "Grouped Bar Chart", "Horizontal Bar Chart",
-                              "Horizontal Grouped Bar Chart", "Stacked Bar Chart"]:
+                              "Horizontal Grouped Bar Chart", "Stacked Bar Chart", "Horizontal Stacked Bar Chart"]:
                 show_pct_labels = st.toggle("Show percentages on bars", value=True)
 
         return {
@@ -1432,7 +1438,7 @@ def run_analysis(config, df_years, df_genpop):
 
             # For stacked bar and pie, Response Category must be in the legend (color)
             # If it's on the x-axis, swap x and legend
-            if chart_type in ["Stacked Bar Chart", "Pie Chart"] and x_col == "response_category":
+            if chart_type in ["Stacked Bar Chart", "Horizontal Stacked Bar Chart", "Pie Chart"] and x_col == "response_category":
                 x_col, legend_col = legend_col, x_col
                 axis_x, axis_legend = axis_legend, axis_x
 
