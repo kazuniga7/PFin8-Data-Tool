@@ -301,13 +301,13 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
                 valid.append("Stacked Bar Chart")
                 valid.append("Horizontal Stacked Bar Chart")
                 valid.append("Pie Chart")
-    else:  # Number Correct
+    else:  # P-Fin 8 Score (# Correct)
         valid = [bar_option, h_bar_option]
         if n_x_groups > 1:
             valid.append("Line Chart")
         # Stacked and pie only valid when full score range (0-8) is selected
         if n_total_correct >= 9:
-            if axis_legend == "Number Correct" or n_legend_groups == 1:
+            if axis_legend == "P-Fin 8 Score (# Correct)" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Horizontal Stacked Bar Chart")
                 valid.append("Pie Chart")
@@ -332,7 +332,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             "group_value": group_label,
             "topic": "Topic",
             "response_category": "Response Category",
-            "score_label": "Number Correct",
+            "score_label": "P-Fin 8 Score (# Correct)",
             "range_label": "Distribution Range",
         }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
@@ -726,7 +726,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         parts.append(f"**Ranges:** {_range_text}")
     else:
         range_text = ", ".join(TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range)) if selected_range else "0–8"
-        parts.append(f"**Number Correct Range:** {range_text}")
+        parts.append(f"**P-Fin 8 Score (# Correct) Range:** {range_text}")
 
     if environment != "Over the Years" and analysis_variable:
         parts.append(f"**Analysis Variable:** {analysis_variable}")
@@ -919,7 +919,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 if not selected_topics:
                     st.warning("Please select at least one topic.")
 
-        # Section 3: View Mode / Number Correct Range
+        # Section 3: View Mode / P-Fin 8 Score (# Correct) Range
         view_mode = None
         selected_range = None
 
@@ -1393,21 +1393,21 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         else:
             if n_total_correct == 1 and n_group > 1:
                 axis_x = group_dim_label
-                axis_legend = "Number Correct"
+                axis_legend = "P-Fin 8 Score (# Correct)"
                 single_group_value = TOTAL_CORRECT_LABELS.get(selected_range[0], str(selected_range[0])) if selected_range and len(selected_range) == 1 else None
             elif n_group == 1 and n_total_correct > 1:
-                axis_x = "Number Correct"
+                axis_x = "P-Fin 8 Score (# Correct)"
                 axis_legend = group_dim_label
                 if environment == "Over the Years" and selected_years and len(selected_years) == 1:
                     single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
             elif n_total_correct == 1 and n_group == 1:
-                axis_x = "Number Correct"
+                axis_x = "P-Fin 8 Score (# Correct)"
                 axis_legend = group_dim_label
             else:
                 axis_assignment_shown = True
-                _dim2 = ["Number Correct", group_dim_label]
+                _dim2 = ["P-Fin 8 Score (# Correct)", group_dim_label]
                 _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
                 _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
                 axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
@@ -1419,7 +1419,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_legend_groups = n_topics
         elif axis_legend == "Response Category":
             n_legend_groups = n_response_cats
-        elif axis_legend == "Number Correct":
+        elif axis_legend == "P-Fin 8 Score (# Correct)":
             n_legend_groups = n_total_correct
         elif axis_legend == dist_range_dim_label:
             n_legend_groups = n_dist_ranges
@@ -1431,7 +1431,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             n_x_groups = n_topics
         elif axis_x == "Response Category":
             n_x_groups = n_response_cats
-        elif axis_x == "Number Correct":
+        elif axis_x == "P-Fin 8 Score (# Correct)":
             n_x_groups = n_total_correct
         elif axis_x == dist_range_dim_label:
             n_x_groups = n_dist_ranges
@@ -1617,7 +1617,7 @@ def run_analysis(config, df_years, df_genpop):
     def dim_to_col(dim_name, mode="binary"):
         if dim_name == "Topic":
             return "topic"
-        elif dim_name == "Number Correct":
+        elif dim_name == "P-Fin 8 Score (# Correct)":
             return "score_label"
         elif dim_name == "Response Category":
             return "response_category"
@@ -1781,13 +1781,13 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "Number Correct" if axis_x == "Number Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
-        legend_dim_label = "Number Correct" if axis_legend == "Number Correct" else ("Response" if environment == "Financial Well-Being" else group_label)
+        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else ("Response" if environment == "Financial Well-Being" else group_label)
+        legend_dim_label = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else ("Response" if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
         x_label = x_dim_label
-        title = f"P-Fin 8: Distribution of Number Correct — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of Number Correct — {x_dim_label} × {legend_dim_label}"
+        title = f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {x_dim_label} × {legend_dim_label}"
 
         # Ensure score order
         if not chart_data.empty:
@@ -1809,7 +1809,7 @@ def run_analysis(config, df_years, df_genpop):
     elif legend_col == "topic":
         legend_label_text = "Topic"
     elif legend_col == "score_label":
-        legend_label_text = "Number Correct"
+        legend_label_text = "P-Fin 8 Score (# Correct)"
     elif legend_col == "range_label":
         legend_label_text = "Distribution Range"
     else:
@@ -1974,7 +1974,7 @@ def main():
         def axis_to_col(axis_name):
             if axis_name == "Topic":
                 return "topic"
-            elif axis_name == "Number Correct":
+            elif axis_name == "P-Fin 8 Score (# Correct)":
                 return "score_label"
             elif axis_name == "Response Category":
                 return "response_category"
@@ -2027,7 +2027,7 @@ def main():
         pivot_df = pivot_df.reset_index()
 
         # Rename the index column for display
-        row_label = axis_x if axis_x in ["Topic", "Number Correct", "Response Category"] else config.get("group_dim_label", "Group")
+        row_label = axis_x if axis_x in ["Topic", "P-Fin 8 Score (# Correct)", "Response Category"] else config.get("group_dim_label", "Group")
         pivot_df = pivot_df.rename(columns={row_col: row_label})
 
         # Maintain category order if applicable
