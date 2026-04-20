@@ -844,8 +844,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         dist_response_cat = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Distribution of Responses":
+                st.markdown("**Response Type**")
                 dist_response_cat = st.radio(
-                    "Response",
+                    "Response Type",
                     ["Correct", "Incorrect", "Don't Know"],
                     label_visibility="collapsed",
                 )
