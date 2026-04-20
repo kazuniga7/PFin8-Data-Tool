@@ -920,6 +920,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     for _i, (_s, _e) in enumerate(_dist_groups):
                         if _i == len(_dist_groups) - 1 and _e == 8:
                             _dist_labels.append(f"{_s}+")
+                        elif _s == _e:
+                            _dist_labels.append(f"{_s}")
                         else:
                             _dist_labels.append(f"{_s}-{_e}")
                     dist_custom_ranges = {
@@ -1103,6 +1105,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     for i, (s, e) in enumerate(custom_age_groups):
                         if i == len(custom_age_groups) - 1 and e == max_age:
                             custom_age_labels.append(f"{s}+")
+                        elif s == e:
+                            custom_age_labels.append(f"{s}")
                         else:
                             custom_age_labels.append(f"{s}-{e}")
 
