@@ -608,6 +608,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     height=_h_bar_height,
                 )
                 fig.update_xaxes(range=[0, 112 if show_pct_labels else 105])
+                # Add top padding so facet labels don't cover the topmost bar
+                fig.update_yaxes(range=[-0.5, _n_y_cats - 0.5 + 0.8])
                 if facet_col:
                     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             else:
