@@ -969,7 +969,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                 value=_de_default,
                                 key=f"dist_end_{_i}",
                             )
-                        _pct_start = _prev_pct_end + 1 if _i > 0 else round(_ds / 8 * 100)
+                        _adjacent = _i > 0 and _dist_groups and _dist_groups[-1][1] + 1 == _ds
+                        _pct_start = _prev_pct_end + 1 if _adjacent else round(_ds / 8 * 100)
                         _pct_end = round(_de / 8 * 100)
                         _prev_pct_end = _pct_end
                         st.caption(f"{_pct_start}%–{_pct_end}% of questions correct")
