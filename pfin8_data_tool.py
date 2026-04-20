@@ -842,12 +842,19 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         _sec2_title = "View Mode" if analysis_type in ("Topic Bucket", "Distribution of Responses") else "Number Correct Range"
         selected_response_cats = None
         dist_response_cat = None
+        dist_range_mode = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Distribution of Responses":
                 st.markdown("**Response Type**")
                 dist_response_cat = st.radio(
                     "Response Type",
                     ["Correct", "Incorrect", "Don't Know"],
+                    label_visibility="collapsed",
+                )
+                st.markdown("**Distribution Ranges**")
+                dist_range_mode = st.radio(
+                    "Distribution Ranges",
+                    ["Buckets", "Custom Ranges"],
                     label_visibility="collapsed",
                 )
             elif analysis_type == "Topic Bucket":
@@ -1297,6 +1304,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "show_pct_labels": show_pct_labels,
             "selected_response_cats": selected_response_cats,
             "dist_response_cat": dist_response_cat,
+            "dist_range_mode": dist_range_mode,
         }
 
 
