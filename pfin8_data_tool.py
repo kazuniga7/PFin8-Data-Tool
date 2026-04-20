@@ -1143,8 +1143,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             elif n_group == 1 and n_topics > 1:
                 axis_x = "Topic"
                 axis_legend = group_dim_label
-                if environment == "Over the Years" and year_range:
-                    single_group_value = str(year_range[0])
+                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                    single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
             elif n_topics == 1 and n_group == 1:
@@ -1167,8 +1167,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             elif n_group == 1 and n_total_correct > 1:
                 axis_x = "Number Correct"
                 axis_legend = group_dim_label
-                if environment == "Over the Years" and year_range:
-                    single_group_value = str(year_range[0])
+                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                    single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
             elif n_total_correct == 1 and n_group == 1:
