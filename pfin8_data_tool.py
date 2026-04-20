@@ -687,7 +687,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
         _cur_title = fig.layout.title.text or ""
         fig.update_layout(
             title=dict(
-                text=f"{_cur_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-Flec Personal Finance Index</span></sup>",
+                text=f"{_cur_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-FLEC Personal Finance Index</span></sup>",
             )
         )
     except Exception as e:
@@ -703,7 +703,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
                   analysis_variable, subgroups, n_obs, dataset_name, year_range=None,
                   dist_response_cat=None, dist_range_mode=None, dist_buckets=None, dist_custom_ranges=None):
     parts = []
-    parts.append("**Data Source:** TIAA G-Flec Personal Finance Index")
+    parts.append("**Data Source:** TIAA G-FLEC Personal Finance Index")
 
     if environment == "Over the Years":
         yr_text = ", ".join(str(y) for y in sorted(year_range)) if year_range else "2017–2026"
@@ -2270,7 +2270,7 @@ def main():
                 max_header_len = max(len(str(h)) for h in header_vals)
                 col_width = max(150, max_header_len * 12)
                 table_fig.update_layout(
-                    title=f"{chart_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-Flec Personal Finance Index</span></sup>",
+                    title=f"{chart_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-FLEC Personal Finance Index</span></sup>",
                     title_font=dict(size=16),
                     width=max(900, n_cols * col_width),
                     height=max(400, 80 + n_rows * 35),
@@ -2285,7 +2285,7 @@ def main():
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
-            st.caption("Source: TIAA G-Flec Personal Finance Index")
+            st.caption("Source: TIAA G-FLEC Personal Finance Index")
         with dl_col:
             if facet_groups and table_html_inner:
                 # Facet tables: client-side PNG via html2canvas + CSV + Excel
