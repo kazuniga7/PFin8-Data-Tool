@@ -843,6 +843,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
+        dist_buckets = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Distribution of Responses":
                 st.markdown("**Response Type**")
@@ -857,6 +858,16 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     ["Buckets", "Custom Ranges"],
                     label_visibility="collapsed",
                 )
+                _dist_bucket_options = ["0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"]
+                dist_buckets = None
+                if dist_range_mode == "Buckets":
+                    dist_buckets = st.multiselect(
+                        "Select Number of Questions Ranges",
+                        _dist_bucket_options,
+                        default=_dist_bucket_options,
+                    )
+                    if not dist_buckets:
+                        st.warning("Please select at least one range.")
             elif analysis_type == "Topic Bucket":
                 view_mode = st.radio(
                     "View Mode",
@@ -1305,6 +1316,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "selected_response_cats": selected_response_cats,
             "dist_response_cat": dist_response_cat,
             "dist_range_mode": dist_range_mode,
+            "dist_buckets": dist_buckets,
         }
 
 
