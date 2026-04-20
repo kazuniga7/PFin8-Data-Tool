@@ -2072,9 +2072,19 @@ def main():
         except Exception:
             pass
 
-        # Build HTML download data
+        # Build HTML download data (include source annotation)
         import base64
-        html_data = fig.to_html(include_plotlyjs="cdn")
+        import copy as _copy2
+        _html_fig = _copy2.deepcopy(fig)
+        _html_fig.add_annotation(
+            text="Source: TIAA G-Flec Personal Finance Index",
+            xref="paper", yref="paper",
+            x=1, y=-0.08,
+            xanchor="right", yanchor="top",
+            showarrow=False,
+            font=dict(size=10, color="gray"),
+        )
+        html_data = _html_fig.to_html(include_plotlyjs="cdn")
         html_b64 = base64.b64encode(html_data.encode()).decode()
 
         if png_available:
