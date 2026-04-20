@@ -881,6 +881,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     st.caption("Min: 0 · Max: 8")
                     _dist_groups = []
                     _dist_errors = []
+                    _prev_pct_end = -1
                     for _i in range(_dist_num_groups):
                         st.markdown(f"**Group {_i+1} Amount:**")
                         _dc1, _dc2 = st.columns(2)
@@ -897,8 +898,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                 value=_de_default,
                                 key=f"dist_end_{_i}",
                             )
-                        _pct_start = round(_ds / 8 * 100)
+                        _pct_start = _prev_pct_end + 1 if _i > 0 else round(_ds / 8 * 100)
                         _pct_end = round(_de / 8 * 100)
+                        _prev_pct_end = _pct_end
                         st.caption(f"{_pct_start}%–{_pct_end}% of questions correct")
                         if _de < _ds:
                             st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
