@@ -897,6 +897,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                 value=_de_default,
                                 key=f"dist_end_{_i}",
                             )
+                        _pct_start = round(_ds / 8 * 100)
+                        _pct_end = round(_de / 8 * 100)
+                        st.caption(f"{_pct_start}%–{_pct_end}% of questions correct")
                         if _de < _ds:
                             st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
                             _dist_errors.append(f"Number of Questions Group {_i+1}: end < start")
