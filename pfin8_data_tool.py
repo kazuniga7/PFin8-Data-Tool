@@ -1946,7 +1946,6 @@ def main():
                 max_header_len = max(len(str(h)) for h in header_vals)
                 col_width = max(150, max_header_len * 12)
                 table_fig.update_layout(
-                    title=chart_title,
                     title=f"{chart_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-Flec Personal Finance Index</span></sup>",
                     title_font=dict(size=16),
                     width=max(900, n_cols * col_width),
