@@ -657,7 +657,14 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         textangle=-90,
                     )
         # Add source annotation at bottom right of every chart
-        pass  # Source annotation added only at PNG export time
+        fig.add_annotation(
+            text="Source: TIAA G-Flec Personal Finance Index",
+            xref="paper", yref="paper",
+            x=1, y=-0.08,
+            xanchor="right", yanchor="top",
+            showarrow=False,
+            font=dict(size=10, color="gray"),
+        )
     except Exception as e:
         st.error(f"Could not create chart: {str(e)}")
         return None
@@ -1947,14 +1954,6 @@ def main():
                     height=max(400, 80 + n_rows * 35),
                     margin=dict(l=10, r=10, t=50, b=10),
                 )
-            table_fig.add_annotation(
-                text="Source: TIAA G-Flec Personal Finance Index",
-                xref="paper", yref="paper",
-                x=1, y=-0.02,
-                xanchor="right", yanchor="top",
-                showarrow=False,
-                font=dict(size=10, color="gray"),
-            )
             table_png_bytes = table_fig.to_image(format="png", scale=2)
             table_png_b64 = base64.b64encode(table_png_bytes).decode()
             table_png_available = True
@@ -2057,34 +2056,14 @@ def main():
         png_available = False
         png_bytes = None
         try:
-            import copy as _copy
-            _export_fig = _copy.deepcopy(fig)
-            _export_fig.add_annotation(
-                text="Source: TIAA G-Flec Personal Finance Index",
-                xref="paper", yref="paper",
-                x=1, y=-0.08,
-                xanchor="right", yanchor="top",
-                showarrow=False,
-                font=dict(size=10, color="gray"),
-            )
-            png_bytes = _export_fig.to_image(format="png", width=2000, height=fig.layout.height or 600, scale=2)
+            png_bytes = fig.to_image(format="png", width=2000, height=fig.layout.height or 600, scale=2)
             png_available = True
         except Exception:
             pass
 
-        # Build HTML download data (include source annotation)
+        # Build HTML download data
         import base64
-        import copy as _copy2
-        _html_fig = _copy2.deepcopy(fig)
-        _html_fig.add_annotation(
-            text="Source: TIAA G-Flec Personal Finance Index",
-            xref="paper", yref="paper",
-            x=1, y=-0.08,
-            xanchor="right", yanchor="top",
-            showarrow=False,
-            font=dict(size=10, color="gray"),
-        )
-        html_data = _html_fig.to_html(include_plotlyjs="cdn")
+        html_data = fig.to_html(include_plotlyjs="cdn")
         html_b64 = base64.b64encode(html_data.encode()).decode()
 
         if png_available:
