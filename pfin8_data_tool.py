@@ -918,17 +918,13 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         dist_custom_ranges = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Distribution of Responses":
-                st.markdown("**Response Type**")
-                dist_response_cat = st.radio(
+                dist_response_cat = st.selectbox(
                     "Response Type",
                     ["Correct", "Incorrect", "Don't Know"],
-                    label_visibility="collapsed",
                 )
-                st.markdown("**Distribution Ranges**")
-                dist_range_mode = st.radio(
+                dist_range_mode = st.selectbox(
                     "Distribution Ranges",
                     ["Buckets", "Custom Ranges"],
-                    label_visibility="collapsed",
                 )
                 _dist_bucket_options = ["0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"]
                 dist_buckets = None
