@@ -899,7 +899,14 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 for _y in _all_years:
                     if f"year_cb_{_y}" not in st.session_state:
                         st.session_state[f"year_cb_{_y}"] = True
-                # Select All / Deselect All buttons
+                # Select All / Deselect All buttons (smaller font via CSS)
+                st.markdown("""
+                <style>
+                section[data-testid="stSidebar"] div[data-testid="stBaseButton-secondary"] p {
+                    font-size: 0.72rem !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
                 _btn_col1, _btn_col2 = st.columns(2)
                 with _btn_col1:
                     if st.button("Select All", key="year_select_all", use_container_width=True):
