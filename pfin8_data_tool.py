@@ -873,16 +873,16 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 else:
                     _dist_num_groups = st.selectbox(
                         "Number of groups",
-                        [1, 2, 3, 4, 5, 6, 7, 8],
+                        [1, 2, 3, 4],
                         index=2,
                         key="dist_num_groups",
                     )
-                    st.markdown("**Define your score groups**")
+                    st.markdown("**Define your groups**")
                     st.caption("Min: 0 · Max: 8")
                     _dist_groups = []
                     _dist_errors = []
                     for _i in range(_dist_num_groups):
-                        st.markdown(f"**Score Group {_i+1}:**")
+                        st.markdown(f"**Number of Questions Group {_i+1}:**")
                         _dc1, _dc2 = st.columns(2)
                         with _dc1:
                             _ds = st.number_input(
@@ -898,8 +898,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                 key=f"dist_end_{_i}",
                             )
                         if _de < _ds:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Score Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
-                            _dist_errors.append(f"Score Group {_i+1}: end < start")
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
+                            _dist_errors.append(f"Number of Questions Group {_i+1}: end < start")
                         _dist_groups.append((_ds, _de))
                     for _i in range(len(_dist_groups)):
                         for _j in range(_i + 1, len(_dist_groups)):
@@ -907,8 +907,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             _g2s, _g2e = _dist_groups[_j]
                             if _g1s <= _g2e and _g2s <= _g1e:
                                 _ov_s, _ov_e = max(_g1s, _g2s), min(_g1e, _g2e)
-                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Score Groups {_i+1} and {_j+1} overlap ({_ov_s}–{_ov_e})</p>', unsafe_allow_html=True)
-                                _dist_errors.append(f"Score Groups {_i+1} and {_j+1} overlap")
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Number of Questions Groups {_i+1} and {_j+1} overlap ({_ov_s}–{_ov_e})</p>', unsafe_allow_html=True)
+                                _dist_errors.append(f"Number of Questions Groups {_i+1} and {_j+1} overlap")
                     if _dist_errors:
                         st.error("Invalid groups — please adjust ranges")
                     _dist_labels = []
