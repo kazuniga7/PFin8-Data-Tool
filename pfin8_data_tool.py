@@ -278,7 +278,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
         bar_option = "Grouped Bar Chart"
         h_bar_option = "Horizontal Grouped Bar Chart"
 
-    if analysis_type == "Topic Bucket":
+    if analysis_type == "Topic":
         if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
             valid = [bar_option, h_bar_option]
             # Stacked and pie only valid when all 3 response categories are selected
@@ -711,7 +711,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
     else:
         parts.append("**Survey Year:** 2026")
 
-    if analysis_type == "Topic Bucket":
+    if analysis_type == "Topic":
         topics_text = ", ".join(selected_topics) if selected_topics else "All Topics"
         mode_text = "binary (correct vs. not correct)" if "Binary" in view_mode else "3-category (correct, incorrect, don't know)"
         parts.append(f"**Topics:** {topics_text}")
@@ -897,10 +897,10 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 """, unsafe_allow_html=True)
 
         # Section 1: Analysis Type
-        with st.expander("Analysis Type", expanded=True):
+        with st.expander("Analyze by . . .", expanded=True):
             analysis_type = st.radio(
-                "Analysis Type",
-                ["Topic Bucket", "Number Correct", "Distribution of Responses"],
+                "Analyze by . . .",
+                ["Topic", "Number Correct", "Distribution of Responses"],
                 help="Analyze by individual topic questions or total correct score",
                 label_visibility="collapsed",
             )
@@ -910,7 +910,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_topics = None
         selected_range = None
 
-        _sec2_title = "View Mode" if analysis_type in ("Topic Bucket", "Distribution of Responses") else "Number Correct Range"
+        _sec2_title = "View Mode" if analysis_type in ("Topic", "Distribution of Responses") else "Number Correct Range"
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
@@ -1000,7 +1000,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         "labels": _dist_labels,
                         "errors": _dist_errors,
                     }
-            elif analysis_type == "Topic Bucket":
+            elif analysis_type == "Topic":
                 view_mode = st.radio(
                     "View Mode",
                     ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
@@ -1273,7 +1273,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         _aa_info = None  # Info for deferred Axis Assignment expander
         n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "3-Category" in view_mode else 1)
 
-        if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
+        if analysis_type == "Topic" and view_mode and "3-Category" in view_mode:
             if n_response_cats == 1:
                 # Single response category selected — treat as 2-way (Topic vs group)
                 axis_facet = None
@@ -1338,7 +1338,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     axis_legend = _curr_legend if _curr_legend in _rem else _rem[0]
                     axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
 
-        elif analysis_type == "Topic Bucket":
+        elif analysis_type == "Topic":
             if n_topics == 1 and n_group > 1:
                 axis_x = group_dim_label
                 axis_legend = "Topic"
@@ -1620,7 +1620,7 @@ def run_analysis(config, df_years, df_genpop):
         else:  # group dimension
             return "group_value"
 
-    if analysis_type == "Topic Bucket":
+    if analysis_type == "Topic":
         selected_topics = config["selected_topics"]
         if not selected_topics:
             return None, None, None, None, None
@@ -1818,7 +1818,7 @@ def run_analysis(config, df_years, df_genpop):
         # Determine pie chart slice column (parts-of-whole dimension)
         pie_names = None
         if chart_type == "Pie Chart":
-            if analysis_type == "Topic Bucket" and view_mode and "3-Category" in view_mode:
+            if analysis_type == "Topic" and view_mode and "3-Category" in view_mode:
                 pie_names = "response_category"
             elif analysis_type == "Number Correct":
                 pie_names = "score_label"
