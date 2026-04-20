@@ -291,7 +291,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             valid = [bar_option, h_bar_option]
             if n_x_groups > 1:
                 valid.append("Line Chart")
-    elif analysis_type == "Distribution of Responses":
+    elif analysis_type == "Response Distribution":
         valid = [bar_option, h_bar_option]
         if n_x_groups > 1:
             valid.append("Line Chart")
@@ -716,7 +716,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         mode_text = "binary (correct vs. not correct)" if "Binary" in view_mode else "3-category (correct, incorrect, don't know)"
         parts.append(f"**Topics:** {topics_text}")
         parts.append(f"**View:** {mode_text}")
-    elif analysis_type == "Distribution of Responses":
+    elif analysis_type == "Response Distribution":
         parts.append(f"**Response Type:** {dist_response_cat or 'N/A'}")
         if dist_range_mode == "Buckets":
             _range_text = ", ".join(dist_buckets) if dist_buckets else "All Buckets"
@@ -900,7 +900,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander("Analyze by . . .", expanded=True):
             analysis_type = st.radio(
                 "Analyze by . . .",
-                ["Topic", "Number Correct", "Distribution of Responses"],
+                ["Topic", "Number Correct", "Response Distribution"],
                 help="Analyze by individual topic questions or total correct score",
                 label_visibility="collapsed",
             )
@@ -910,14 +910,14 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_topics = None
         selected_range = None
 
-        _sec2_title = "View Mode" if analysis_type in ("Topic", "Distribution of Responses") else "Number Correct Range"
+        _sec2_title = "View Mode" if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
         dist_buckets = None
         dist_custom_ranges = None
         with st.expander(_sec2_title, expanded=True):
-            if analysis_type == "Distribution of Responses":
+            if analysis_type == "Response Distribution":
                 dist_response_cat = st.selectbox(
                     "Response Type",
                     ["Correct", "Incorrect", "Don't Know"],
@@ -1244,10 +1244,10 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         n_topics = len(selected_topics) if selected_topics else 8
         n_total_correct = len(selected_range) if selected_range else 9
 
-        # Distribution of Responses range count
+        # Response Distribution range count
         dist_range_dim_label = "Distribution Range"
         n_dist_ranges = 1
-        if analysis_type == "Distribution of Responses":
+        if analysis_type == "Response Distribution":
             if dist_range_mode == "Buckets" and dist_buckets:
                 n_dist_ranges = len(dist_buckets)
             elif dist_range_mode == "Custom Ranges" and dist_custom_ranges and not dist_custom_ranges.get("errors"):
@@ -1362,7 +1362,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
                 axis_legend = [d for d in _dim2 if d != axis_x][0]
 
-        elif analysis_type == "Distribution of Responses":
+        elif analysis_type == "Response Distribution":
             if n_dist_ranges == 1 and n_group > 1:
                 axis_x = group_dim_label
                 axis_legend = dist_range_dim_label
@@ -1696,7 +1696,7 @@ def run_analysis(config, df_years, df_genpop):
                 _full_cat_order = ["Correct", "Incorrect", "Don't Know"]
                 category_orders["response_category"] = [c for c in _full_cat_order if not selected_response_cats or c in selected_response_cats]
 
-    elif analysis_type == "Distribution of Responses":
+    elif analysis_type == "Response Distribution":
         dist_response_cat = config["dist_response_cat"]
         dist_range_mode_val = config["dist_range_mode"]
         dist_buckets_val = config["dist_buckets"]
@@ -1822,7 +1822,7 @@ def run_analysis(config, df_years, df_genpop):
                 pie_names = "response_category"
             elif analysis_type == "Number Correct":
                 pie_names = "score_label"
-            elif analysis_type == "Distribution of Responses":
+            elif analysis_type == "Response Distribution":
                 pie_names = "range_label"
 
         fig = create_chart(chart_data, chart_type, title, x_label, y_label, color_col,
