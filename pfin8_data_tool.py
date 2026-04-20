@@ -900,7 +900,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander("Analyze by . . .", expanded=True):
             analysis_type = st.radio(
                 "Analyze by . . .",
-                ["Topic", "Number Correct", "Response Distribution"],
+                ["Topic", "P-Fin 8 Score (# Correct)", "Response Distribution"],
                 help="Analyze by individual topic questions or total correct score",
                 label_visibility="collapsed",
             )
@@ -923,7 +923,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         view_mode = None
         selected_range = None
 
-        _sec2_title = "Calculate response percentages by . . ." if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
+        _sec2_title = "Calculate response percentages by . . ." if analysis_type in ("Topic", "Response Distribution") else "Select Score Values . . ."
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
@@ -1039,7 +1039,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     )
                     if not selected_response_cats:
                         st.warning("Please select at least one response category.")
-            elif analysis_type == "Number Correct":
+            elif analysis_type == "P-Fin 8 Score (# Correct)":
                 _all_scores = list(range(9))
                 for _s in _all_scores:
                     if f"nc_cb_{_s}" not in st.session_state:
@@ -1826,7 +1826,7 @@ def run_analysis(config, df_years, df_genpop):
         if chart_type == "Pie Chart":
             if analysis_type == "Topic" and view_mode and "Response Category" in view_mode:
                 pie_names = "response_category"
-            elif analysis_type == "Number Correct":
+            elif analysis_type == "P-Fin 8 Score (# Correct)":
                 pie_names = "score_label"
             elif analysis_type == "Response Distribution":
                 pie_names = "range_label"
