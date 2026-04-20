@@ -899,14 +899,24 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 for _y in _all_years:
                     if f"year_cb_{_y}" not in st.session_state:
                         st.session_state[f"year_cb_{_y}"] = True
-                # Select All / Deselect All buttons
-                _btn_col1, _btn_col2 = st.columns(2)
+                # Select All / Deselect All buttons (small, inline)
+                st.markdown("""
+                <style>
+                div[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) button {
+                    padding: 0.1rem 0.5rem !important;
+                    font-size: 0.72rem !important;
+                    line-height: 1.2 !important;
+                    height: auto !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                _btn_col1, _btn_col2, _btn_spacer = st.columns([1, 1, 2])
                 with _btn_col1:
-                    if st.button("Select All", key="year_select_all", use_container_width=True):
+                    if st.button("Select All", key="year_select_all"):
                         for _y in _all_years:
                             st.session_state[f"year_cb_{_y}"] = True
                 with _btn_col2:
-                    if st.button("Deselect All", key="year_deselect_all", use_container_width=True):
+                    if st.button("Deselect All", key="year_deselect_all"):
                         for _y in _all_years:
                             st.session_state[f"year_cb_{_y}"] = False
                 # 2-column checkbox grid
