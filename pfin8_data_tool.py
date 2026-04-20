@@ -590,13 +590,14 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 # Clean up facet titles
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart", "Horizontal Stacked Bar Chart"]:
+                import math as _math
+                _n_y_cats = chart_data["x"].nunique()
                 if facet_col and facet_col in chart_data.columns:
-                    _n_facet_rows = chart_data[facet_col].nunique()
-                    _n_y_cats = chart_data["x"].nunique()
-                    _h_bar_height = max(400, _n_facet_rows * (_n_y_cats * 40 + 80) + 120)
+                    _n_facets = chart_data[facet_col].nunique()
+                    _n_grid_rows = _math.ceil(_n_facets / 4)
+                    _h_bar_height = max(500, _n_grid_rows * max(200, _n_y_cats * 28 + 80) + 100)
                 else:
-                    _n_y_cats = chart_data["x"].nunique()
-                    _h_bar_height = max(400, _n_y_cats * 40 + 150)
+                    _h_bar_height = max(400, _n_y_cats * 35 + 150)
                 fig.update_layout(
                     yaxis_title=x_label,
                     xaxis_title=y_label,
