@@ -844,6 +844,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         dist_response_cat = None
         dist_range_mode = None
         dist_buckets = None
+        dist_custom_ranges = None
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Distribution of Responses":
                 st.markdown("**Response Type**")
@@ -860,6 +861,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 )
                 _dist_bucket_options = ["0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"]
                 dist_buckets = None
+                dist_custom_ranges = None
                 if dist_range_mode == "Buckets":
                     dist_buckets = st.multiselect(
                         "Select Number of Questions Ranges",
@@ -868,6 +870,58 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     )
                     if not dist_buckets:
                         st.warning("Please select at least one range.")
+                else:
+                    _dist_num_groups = st.selectbox(
+                        "Number of groups",
+                        [1, 2, 3, 4, 5, 6, 7, 8],
+                        index=2,
+                        key="dist_num_groups",
+                    )
+                    st.markdown("**Define your score groups**")
+                    st.caption("Min: 0 · Max: 8")
+                    _dist_groups = []
+                    _dist_errors = []
+                    for _i in range(_dist_num_groups):
+                        st.markdown(f"**Score Group {_i+1}:**")
+                        _dc1, _dc2 = st.columns(2)
+                        with _dc1:
+                            _ds = st.number_input(
+                                "Start", min_value=0, max_value=8,
+                                value=min(_i * (8 // _dist_num_groups), 8),
+                                key=f"dist_start_{_i}",
+                            )
+                        with _dc2:
+                            _de_default = min((_i + 1) * (8 // _dist_num_groups) - 1, 8) if _i < _dist_num_groups - 1 else 8
+                            _de = st.number_input(
+                                "End", min_value=0, max_value=8,
+                                value=_de_default,
+                                key=f"dist_end_{_i}",
+                            )
+                        if _de < _ds:
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Score Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
+                            _dist_errors.append(f"Score Group {_i+1}: end < start")
+                        _dist_groups.append((_ds, _de))
+                    for _i in range(len(_dist_groups)):
+                        for _j in range(_i + 1, len(_dist_groups)):
+                            _g1s, _g1e = _dist_groups[_i]
+                            _g2s, _g2e = _dist_groups[_j]
+                            if _g1s <= _g2e and _g2s <= _g1e:
+                                _ov_s, _ov_e = max(_g1s, _g2s), min(_g1e, _g2e)
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Score Groups {_i+1} and {_j+1} overlap ({_ov_s}–{_ov_e})</p>', unsafe_allow_html=True)
+                                _dist_errors.append(f"Score Groups {_i+1} and {_j+1} overlap")
+                    if _dist_errors:
+                        st.error("Invalid groups — please adjust ranges")
+                    _dist_labels = []
+                    for _i, (_s, _e) in enumerate(_dist_groups):
+                        if _i == len(_dist_groups) - 1 and _e == 8:
+                            _dist_labels.append(f"{_s}+")
+                        else:
+                            _dist_labels.append(f"{_s}-{_e}")
+                    dist_custom_ranges = {
+                        "groups": _dist_groups,
+                        "labels": _dist_labels,
+                        "errors": _dist_errors,
+                    }
             elif analysis_type == "Topic Bucket":
                 view_mode = st.radio(
                     "View Mode",
@@ -1317,6 +1371,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "dist_response_cat": dist_response_cat,
             "dist_range_mode": dist_range_mode,
             "dist_buckets": dist_buckets,
+            "dist_custom_ranges": dist_custom_ranges,
         }
 
 
