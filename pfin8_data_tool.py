@@ -590,6 +590,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 # Clean up facet titles
                 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             elif chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart", "Horizontal Stacked Bar Chart"]:
+                if facet_col and facet_col in chart_data.columns:
+                    _n_facet_rows = chart_data[facet_col].nunique()
+                    _n_y_cats = chart_data["x"].nunique()
+                    _h_bar_height = max(400, _n_facet_rows * (_n_y_cats * 40 + 80) + 120)
+                else:
+                    _n_y_cats = chart_data["x"].nunique()
+                    _h_bar_height = max(400, _n_y_cats * 40 + 150)
                 fig.update_layout(
                     yaxis_title=x_label,
                     xaxis_title=y_label,
@@ -597,7 +604,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     template="plotly_white",
                     font=dict(size=12, color="black"),
                     title_font=dict(size=16, color="black"),
-                    height=800 if facet_col else 500,
+                    height=_h_bar_height,
                 )
                 fig.update_xaxes(range=[0, 112 if show_pct_labels else 105])
                 if facet_col:
