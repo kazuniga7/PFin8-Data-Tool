@@ -279,7 +279,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
         h_bar_option = "Horizontal Grouped Bar Chart"
 
     if analysis_type == "Topic":
-        if view_mode == "3-Category (Correct / Incorrect / Don't Know)":
+        if view_mode and "Response Category" in view_mode:
             valid = [bar_option, h_bar_option]
             # Stacked and pie only valid when all 3 response categories are selected
             all_cats_selected = n_response_cats is None or n_response_cats == 3
@@ -713,7 +713,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
 
     if analysis_type == "Topic":
         topics_text = ", ".join(selected_topics) if selected_topics else "All Topics"
-        mode_text = "binary (correct vs. not correct)" if "Binary" in view_mode else "3-category (correct, incorrect, don't know)"
+        mode_text = "binary (correct vs. not correct)" if "Single Measure" in view_mode else "3-category (correct, incorrect, don't know)"
         parts.append(f"**Topics:** {topics_text}")
         parts.append(f"**View:** {mode_text}")
     elif analysis_type == "Response Distribution":
@@ -923,7 +923,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         view_mode = None
         selected_range = None
 
-        _sec2_title = "View Mode" if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
+        _sec2_title = "Calculate percentages by . . ." if analysis_type in ("Topic", "Response Distribution") else "Number Correct Range"
         selected_response_cats = None
         dist_response_cat = None
         dist_range_mode = None
@@ -1015,11 +1015,11 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     }
             elif analysis_type == "Topic":
                 view_mode = st.radio(
-                    "View Mode",
-                    ["Binary (Correct / Not Correct)", "3-Category (Correct / Incorrect / Don't Know)"],
+                    "Calculate percentages by . . .",
+                    ["Single Measure: % Correct or % Not Correct", "% of Respondents by Response Category (Correct, Incorrect, Don't Know)"],
                     label_visibility="collapsed",
                 )
-                if "Binary" in view_mode:
+                if "Single Measure" in view_mode:
                     binary_response = st.radio(
                         "Response",
                         ["Correct", "Not Correct"],
@@ -1275,9 +1275,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         single_group_value = None
         axis_assignment_shown = False
         _aa_info = None  # Info for deferred Axis Assignment expander
-        n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "3-Category" in view_mode else 1)
+        n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "Response Category" in view_mode else 1)
 
-        if analysis_type == "Topic" and view_mode and "3-Category" in view_mode:
+        if analysis_type == "Topic" and view_mode and "Response Category" in view_mode:
             if n_response_cats == 1:
                 # Single response category selected — treat as 2-way (Topic vs group)
                 axis_facet = None
@@ -1630,10 +1630,10 @@ def run_analysis(config, df_years, df_genpop):
             return None, None, None, None, None
 
         selected_response_cats = config.get("selected_response_cats")
-        if view_mode and "3-Category" in view_mode and selected_response_cats is not None and not selected_response_cats:
+        if view_mode and "Response Category" in view_mode and selected_response_cats is not None and not selected_response_cats:
             return None, None, None, None, None
 
-        if view_mode and "Binary" in view_mode:
+        if view_mode and "Single Measure" in view_mode:
             topics_map = {k: v for k, v in TOPIC_NAMES.items() if k in selected_topics}
             chart_data = prepare_topic_binary_data(df, topics_map, group_col, group_label)
             hover_mode = "binary"
@@ -1822,7 +1822,7 @@ def run_analysis(config, df_years, df_genpop):
         # Determine pie chart slice column (parts-of-whole dimension)
         pie_names = None
         if chart_type == "Pie Chart":
-            if analysis_type == "Topic" and view_mode and "3-Category" in view_mode:
+            if analysis_type == "Topic" and view_mode and "Response Category" in view_mode:
                 pie_names = "response_category"
             elif analysis_type == "Number Correct":
                 pie_names = "score_label"
