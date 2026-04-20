@@ -829,7 +829,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander("Analysis Type", expanded=True):
             analysis_type = st.radio(
                 "Analysis Type",
-                ["Topic Bucket", "Number Correct"],
+                ["Topic Bucket", "Number Correct", "Distribution of Responses"],
                 help="Analyze by individual topic questions or total correct score",
                 label_visibility="collapsed",
             )
