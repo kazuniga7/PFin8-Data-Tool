@@ -906,7 +906,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
                             _dist_errors.append(f"Number of Questions Group {_i+1}: end < start")
                         elif _de == _ds:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: start must be less than end</p>', unsafe_allow_html=True)
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: start must be less than end and end must be greater than start</p>', unsafe_allow_html=True)
                             _dist_errors.append(f"Number of Questions Group {_i+1}: start == end")
                         _dist_groups.append((_ds, _de))
                     for _i in range(len(_dist_groups)):
@@ -1087,7 +1087,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
                             age_errors.append(f"Age Group {i+1}: end < start")
                         elif end == start:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: start age must be less than end age</p>', unsafe_allow_html=True)
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: start age must be less than end age and end age must be greater than start age</p>', unsafe_allow_html=True)
                             age_errors.append(f"Age Group {i+1}: start == end")
 
                         custom_age_groups.append((start, end))
