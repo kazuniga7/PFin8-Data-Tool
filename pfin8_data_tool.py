@@ -2616,7 +2616,7 @@ def main():
         _exp_html = _exp_fig.to_html(include_plotlyjs="cdn")
         _exp_inject = (
             "<style>"
-            "g.legend .traces, g.legenditem { cursor: default !important; }"
+            "g.legend, g.legend * { cursor: default !important; }"
             "</style>"
             "<script>"
             "window.addEventListener('load', function() {"
