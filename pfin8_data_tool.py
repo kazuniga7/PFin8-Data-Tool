@@ -834,6 +834,8 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
     parts.append(f"**Sample Size (filtered):** n={n_obs:,}")
     parts.append("All results are weighted to represent the population using survey weights. "
                   "Missing, refused, and inapplicable responses have been excluded.")
+    if environment == "Financial Well-Being" and analysis_variable:
+        parts.append(f"This analysis provides information on the correlation between {analysis_variable} and financial literacy.")
     return " | ".join(parts[:4]) + "\n\n" + " | ".join(parts[4:])
 
 
