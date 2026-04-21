@@ -1507,7 +1507,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     st.markdown(f"<span style='color:black;font-size:1rem'>Legend: <strong>{axis_legend}</strong></span>", unsafe_allow_html=True)
 
         # Section 6: Chart Type + Show percentages toggle
-        with st.expander("Generate Chart . . .", expanded=True):
+        with st.expander("Generate Visual . . .", expanded=True):
             _dist_covers_all = dist_ranges_covers_all(dist_range_mode, dist_buckets, dist_custom_ranges)
             valid_charts = get_valid_chart_types(analysis_type, view_mode, environment, axis_legend, n_legend_groups, n_total_correct, n_x_groups, n_response_cats, dist_ranges_cover_all=_dist_covers_all)
             chart_type = st.selectbox("Chart Type", valid_charts, label_visibility="collapsed")
