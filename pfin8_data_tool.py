@@ -835,7 +835,10 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
     parts.append("All results are weighted to represent the population using survey weights. "
                   "Missing, refused, and inapplicable responses have been excluded.")
     if environment == "Financial Well-Being" and analysis_variable:
-        parts.append(f"This analysis provides information on the correlation between {analysis_variable} and financial literacy.")
+        _fw_var_text = analysis_variable.lower()
+        if _fw_var_text.startswith("has "):
+            _fw_var_text = "having " + _fw_var_text[4:]
+        parts.append(f"This analysis provides information on the correlation between {_fw_var_text} and financial literacy.")
     return " | ".join(parts[:4]) + "\n\n" + " | ".join(parts[4:])
 
 
