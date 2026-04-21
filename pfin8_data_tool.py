@@ -2648,6 +2648,8 @@ def main():
                     font=dict(color="black", size=12),
                     xanchor="left", x=0,
                     yanchor="top", y=1,
+                    itemclick=False,
+                    itemdoubleclick=False,
                 ),
                 margin=dict(l=0, r=0, t=40, b=0),
                 height=_leg_h,
