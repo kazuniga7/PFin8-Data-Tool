@@ -2628,7 +2628,7 @@ def main():
 
         # ── Interactive display: pie grid on left, vertical legend on right ──────
         _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
-        _grid_col, _leg_col = st.columns([6, 1])
+        _grid_col, _leg_col = st.columns([9, 1])
 
         # Vertical legend in right column — matches Plotly's default right-side legend
         with _leg_col:
@@ -2656,7 +2656,7 @@ def main():
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
             )
-            st.plotly_chart(_lf, use_container_width=True)
+            st.plotly_chart(_lf, use_container_width=True, config={"displayModeBar": False})
 
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
@@ -2706,7 +2706,7 @@ def main():
                         height=160,
                         showlegend=False,
                     )
-                    _rc[_ci + 1].plotly_chart(_mini, use_container_width=True)
+                    _rc[_ci + 1].plotly_chart(_mini, use_container_width=True, config={"displayModeBar": False})
 
                 st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
 
