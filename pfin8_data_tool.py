@@ -1718,7 +1718,7 @@ def run_analysis(config, df_years, df_genpop):
             "7-8 (76%-100%)": (7, 8),
         }
 
-        if dist_range_mode_val == "Buckets":
+        if dist_range_mode_val == "Predefined":
             if not dist_buckets_val:
                 return None, None, None, None, None
             _ordered_buckets = [b for b in _bucket_map if b in dist_buckets_val]
