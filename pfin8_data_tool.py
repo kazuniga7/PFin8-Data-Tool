@@ -1290,6 +1290,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                     ((df_genpop["reported_age"] >= start) & (df_genpop["reported_age"] <= end)).sum()
                                 )
                                 st.caption(f"n = {_n_range:,}")
+                                if _n_range < 50:
+                                    st.markdown(f'<p style="color: orange; font-size: 0.85rem; margin: -8px 0 5px 0;">⚠️ Too few observations</p>', unsafe_allow_html=True)
 
                             custom_age_groups.append((start, end))
 
