@@ -1671,7 +1671,7 @@ def run_analysis(config, df_years, df_genpop):
 
     # Build the Financial Well-Being response label (question text above "Response")
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
-    _fw_response_label = f"{_fw_question}<br>Response" if _fw_question else "Response"
+    _fw_response_label = _fw_question if _fw_question else "Response"
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
