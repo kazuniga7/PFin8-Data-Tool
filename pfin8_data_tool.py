@@ -1504,7 +1504,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         key='pfin8_aa_x',
                     )
                     axis_legend = [d for d in _opts if d != axis_x][0]
-                    st.caption(f"Legend: **{axis_legend}**")
+                    st.markdown(f"<span style='color:black;font-size:0.85rem'>Legend: <strong>{axis_legend}</strong></span>", unsafe_allow_html=True)
 
         # Section 6: Chart Type + Show percentages toggle
         with st.expander("Chart Type", expanded=True):
