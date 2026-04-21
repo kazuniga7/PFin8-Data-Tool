@@ -1086,7 +1086,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         if environment == "Survey Years":
             _sec4_title = "Choose years . . ."
         elif environment == "Demographics":
-            _sec4_title = "Demographic Variable"
+            _sec4_title = "Choose demographic . . ."
         else:
             _sec4_title = "Financial Well-Being Variable"
 
