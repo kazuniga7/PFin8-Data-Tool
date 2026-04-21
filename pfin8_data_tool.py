@@ -1917,6 +1917,21 @@ def run_analysis(config, df_years, df_genpop):
                            n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names,
                            show_pct_labels=config.get("show_pct_labels", False))
 
+        # When facets are active and the FW question is on the x-axis, replace each
+        # subplot's x-axis title with "Response" and add one shared question label below.
+        if (fig is not None and use_facet and environment == "Financial Well-Being"
+                and x_label == _fw_axis_label and _fw_question):
+            fig.update_xaxes(title_text="Response")
+            fig.add_annotation(
+                text=_fw_question,
+                xref="paper", yref="paper",
+                x=0.5, y=-0.12,
+                showarrow=False,
+                font=dict(size=12, color="black"),
+                xanchor="center",
+            )
+            # Add extra bottom margin so the annotation isn't clipped
+            fig.update_layout(margin=dict(b=100))
 
     # Generate note
     note = generate_note(
