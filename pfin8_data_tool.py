@@ -1893,6 +1893,18 @@ def run_analysis(config, df_years, df_genpop):
                            n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names,
                            show_pct_labels=config.get("show_pct_labels", False))
 
+        # Add financial well-being question text as subtitle
+        if fig is not None and environment == "Financial Well-Being":
+            _fw_col = config.get("analysis_col")
+            _fw_question = FINANCIAL_WELLBEING_LABELS.get(_fw_col, "")
+            if _fw_question:
+                _cur_title = fig.layout.title.text or ""
+                fig.update_layout(
+                    title=dict(
+                        text=f"{_cur_title}<br><sup><span style='color:gray;font-size:11px'>{_fw_question}</span></sup>"
+                    )
+                )
+
     # Generate note
     note = generate_note(
         environment=environment,
