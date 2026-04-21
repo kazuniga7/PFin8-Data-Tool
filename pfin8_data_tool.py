@@ -490,14 +490,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             row=r + 1, col=c + 1,
                         )
                 # Add row labels (facet_vals) on the left side, vertically
-                # Use actual subplot domains for accurate y positioning
+                # Calculate row centers using the same formula make_subplots uses
+                _subplot_h = (1.0 - v_spacing * (n_rows - 1)) / n_rows if n_rows > 1 else 1.0
                 for r, fv in enumerate(facet_vals):
-                    subplot_info = fig.get_subplot(r + 1, 1)
-                    y_center = (subplot_info.domain.y[0] + subplot_info.domain.y[1]) / 2
+                    _y_top = 1.0 - r * (_subplot_h + v_spacing)
+                    _y_center = _y_top - _subplot_h / 2
                     fig.add_annotation(
                         text=str(fv),
                         xref="paper", yref="paper",
-                        x=-0.03, y=y_center,
+                        x=-0.03, y=_y_center,
                         showarrow=False,
                         font=dict(size=11, color="black"),
                         xanchor="center",
