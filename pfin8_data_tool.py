@@ -944,7 +944,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 dist_custom_ranges = None
                 if dist_range_mode == "Predefined":
                     dist_buckets = st.multiselect(
-                        "Select Number of Questions Ranges",
+                        "Select Ranges",
                         _dist_bucket_options,
                         default=_dist_bucket_options,
                     )
