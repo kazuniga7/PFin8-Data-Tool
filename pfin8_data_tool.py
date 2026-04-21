@@ -1686,7 +1686,7 @@ def run_analysis(config, df_years, df_genpop):
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
     _fw_response_label = _wrap(_fw_question, width=42) if _fw_question else "Response"
     _fw_axis_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
-    _fw_haxis_label = _wrap(_fw_question, width=60) if _fw_question else "Response"
+    _fw_haxis_label = _wrap(_fw_question, width=45) if _fw_question else "Response"
     _fw_title_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
     _is_horiz = chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart", "Horizontal Stacked Bar Chart"]
     _fw_x_label = _fw_haxis_label if _is_horiz else _fw_axis_label
