@@ -1291,7 +1291,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                                 )
                                 st.caption(f"Number of Respondents: {_n_range:,}")
                                 if _n_range < 50:
-                                    st.markdown(f'<p style="color: orange; font-size: 0.85rem; margin: -8px 0 5px 0;">⚠️ Note: This range has too few respondents and may not be a good representation.</p>', unsafe_allow_html=True)
+                                    st.markdown(f'<p style="color: orange; font-size: 0.85rem; margin: -8px 0 5px 0;">⚠️ Note: This range includes too few respondents to be a reliable representation.</p>', unsafe_allow_html=True)
 
                             custom_age_groups.append((start, end))
 
