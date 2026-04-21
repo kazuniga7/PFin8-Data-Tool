@@ -952,18 +952,18 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         st.warning("Please select at least one range.")
                 else:
                     _dist_num_groups = st.selectbox(
-                        "Number of groups",
+                        "Number of Ranges",
                         [1, 2, 3, 4],
                         index=2,
                         key="dist_num_groups",
                     )
-                    st.markdown("**Define your number of questions groups**")
+                    st.markdown("**Define your number of questions ranges**")
                     st.caption("Min: 0 · Max: 8")
                     _dist_groups = []
                     _dist_errors = []
                     _prev_pct_end = -1
                     for _i in range(_dist_num_groups):
-                        st.markdown(f"**Group {_i+1} Amount:**")
+                        st.markdown(f"**Range {_i+1}:**")
                         _dc1, _dc2 = st.columns(2)
                         with _dc1:
                             _ds = st.number_input(
@@ -984,11 +984,11 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         _prev_pct_end = _pct_end
                         st.caption(f"{_pct_start}%–{_pct_end}% of questions correct")
                         if _de < _ds:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
-                            _dist_errors.append(f"Number of Questions Group {_i+1}: end < start")
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Range {_i+1}: end must be ≥ start</p>', unsafe_allow_html=True)
+                            _dist_errors.append(f"Range {_i+1}: end < start")
                         elif _de == _ds:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Number of Questions Group {_i+1}: start must be less than end and end must be greater than start</p>', unsafe_allow_html=True)
-                            _dist_errors.append(f"Number of Questions Group {_i+1}: start == end")
+                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Range {_i+1}: start must be less than end and end must be greater than start</p>', unsafe_allow_html=True)
+                            _dist_errors.append(f"Range {_i+1}: start == end")
                         _dist_groups.append((_ds, _de))
                     for _i in range(len(_dist_groups)):
                         for _j in range(_i + 1, len(_dist_groups)):
@@ -996,10 +996,10 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             _g2s, _g2e = _dist_groups[_j]
                             if _g1s <= _g2e and _g2s <= _g1e:
                                 _ov_s, _ov_e = max(_g1s, _g2s), min(_g1e, _g2e)
-                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Number of Questions Groups {_i+1} and {_j+1} overlap ({_ov_s}–{_ov_e})</p>', unsafe_allow_html=True)
-                                _dist_errors.append(f"Number of Questions Groups {_i+1} and {_j+1} overlap")
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Ranges {_i+1} and {_j+1} overlap ({_ov_s}–{_ov_e})</p>', unsafe_allow_html=True)
+                                _dist_errors.append(f"Ranges {_i+1} and {_j+1} overlap")
                     if _dist_errors:
-                        st.error("Invalid groups — please adjust ranges")
+                        st.error("Invalid ranges — please adjust")
                     _dist_labels = []
                     for _i, (_s, _e) in enumerate(_dist_groups):
                         if _i == len(_dist_groups) - 1 and _e == 8:
