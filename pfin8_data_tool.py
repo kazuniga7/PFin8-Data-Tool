@@ -297,7 +297,7 @@ def get_valid_chart_types(analysis_type, view_mode, environment, axis_legend=Non
             valid.append("Line Chart")
         # Stacked and pie only valid when ranges cover 0–8 completely
         if dist_ranges_cover_all:
-            if axis_legend == "Distribution Range" or n_legend_groups == 1:
+            if axis_legend == "Question Count Range" or n_legend_groups == 1:
                 valid.append("Stacked Bar Chart")
                 valid.append("Horizontal Stacked Bar Chart")
                 valid.append("Pie Chart")
@@ -333,7 +333,7 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             "topic": "Topic",
             "response_category": "Response Category",
             "score_label": "P-Fin 8 Score (# Correct)",
-            "range_label": "Distribution Range",
+            "range_label": "Question Count Range",
         }
         facet_args = {"facet_col": facet_col, "facet_col_wrap": 4} if facet_col else {}
 
@@ -1002,12 +1002,14 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         st.error("Invalid ranges — please adjust")
                     _dist_labels = []
                     for _i, (_s, _e) in enumerate(_dist_groups):
-                        if _i == len(_dist_groups) - 1 and _e == 8:
-                            _dist_labels.append(f"{_s}+")
-                        elif _s == _e:
-                            _dist_labels.append(f"{_s}")
+                        _pct_s = round(_s / 8 * 100)
+                        _pct_e = round(_e / 8 * 100)
+                        if _s == _e:
+                            _dist_labels.append(f"{_s} ({_pct_s}%)")
+                        elif _i == len(_dist_groups) - 1 and _e == 8:
+                            _dist_labels.append(f"{_s}+ ({_pct_s}%-{_pct_e}%)")
                         else:
-                            _dist_labels.append(f"{_s}-{_e}")
+                            _dist_labels.append(f"{_s}-{_e} ({_pct_s}%-{_pct_e}%)")
                     dist_custom_ranges = {
                         "groups": _dist_groups,
                         "labels": _dist_labels,
@@ -1251,7 +1253,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         n_total_correct = len(selected_range) if selected_range else 9
 
         # Response Distribution range count
-        dist_range_dim_label = "Distribution Range"
+        dist_range_dim_label = "Question Count Range"
         n_dist_ranges = 1
         if analysis_type == "Response Distribution":
             if dist_range_mode == "Predefined" and dist_buckets:
@@ -1611,7 +1613,7 @@ def run_analysis(config, df_years, df_genpop):
     axis_facet = config.get("axis_facet")
     single_group_value = config.get("single_group_value")
 
-    dist_range_dim_label = config.get("dist_range_dim_label", "Distribution Range")
+    dist_range_dim_label = config.get("dist_range_dim_label", "Question Count Range")
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
@@ -1811,7 +1813,7 @@ def run_analysis(config, df_years, df_genpop):
     elif legend_col == "score_label":
         legend_label_text = "P-Fin 8 Score (# Correct)"
     elif legend_col == "range_label":
-        legend_label_text = "Distribution Range"
+        legend_label_text = "Question Count Range"
     else:
         legend_label_text = group_label
 
@@ -1970,7 +1972,7 @@ def main():
         view_mode = config.get("view_mode", "")
 
         # Map axis selections to data column names
-        _dist_range_dim_label = config.get("dist_range_dim_label", "Distribution Range")
+        _dist_range_dim_label = config.get("dist_range_dim_label", "Question Count Range")
         def axis_to_col(axis_name):
             if axis_name == "Topic":
                 return "topic"
