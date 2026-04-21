@@ -464,43 +464,38 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     "title": title,
                 }
             elif len(facet_dims) >= 2:
-                # No explicit facet: combine all dimensions into panel labels
-                chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
-                facet_labels = list(chart_data["_pie_facet"].unique())
-                n_facets = len(facet_labels)
-                n_cols = 4
-                n_pie_rows = -(-n_facets // n_cols)
+                # No explicit facet_col but two layout dimensions exist — use the
+                # same compact 2D grid as the explicit-facet case.
+                # rows = last dim (topic / group_value), cols = first dim (x / responses).
+                _derived_facet_col = facet_dims[-1]
+                _derived_sec_col   = facet_dims[0] if facet_dims[0] != _derived_facet_col else None
+                _d_facet_vals = chart_data[_derived_facet_col].unique().tolist()
+                if _derived_facet_col in category_orders:
+                    _d_facet_vals = [v for v in category_orders[_derived_facet_col] if v in _d_facet_vals]
+                if _derived_sec_col and _derived_sec_col in chart_data.columns:
+                    _d_sec_vals = chart_data[_derived_sec_col].unique().tolist()
+                    if _derived_sec_col in category_orders:
+                        _d_sec_vals = [v for v in category_orders[_derived_sec_col] if v in _d_sec_vals]
+                    _xok = "x" if "x" in category_orders else _derived_sec_col
+                    if _xok in category_orders:
+                        _xo = category_orders[_xok]
+                        _d_sec_vals = [v for v in _xo if v in _d_sec_vals] + [v for v in _d_sec_vals if v not in _xo]
+                else:
+                    _d_sec_vals = [None]
+                    _derived_sec_col = None
                 unique_slices = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(unique_slices)}
-                v_spacing = min(0.02, 0.95 / (n_pie_rows - 1)) if n_pie_rows > 1 else 0
-                fig = make_subplots(
-                    rows=n_pie_rows, cols=n_cols,
-                    specs=[[{"type": "pie"}] * n_cols for _ in range(n_pie_rows)],
-                    subplot_titles=facet_labels + [""] * (n_pie_rows * n_cols - n_facets),
-                    vertical_spacing=v_spacing,
-                    horizontal_spacing=0.02,
-                )
-                for i, label in enumerate(facet_labels):
-                    row_idx = i // n_cols + 1
-                    col_idx = i % n_cols + 1
-                    subset = chart_data[chart_data["_pie_facet"] == label]
-                    sub_labels = subset[slice_col].tolist()
-                    sub_colors = [color_map[lbl] for lbl in sub_labels]
-                    fig.add_trace(
-                        go.Pie(
-                            values=subset["percentage"].tolist(),
-                            labels=sub_labels,
-                            name=label,
-                            marker=dict(colors=sub_colors),
-                            textposition="inside",
-                            textinfo="percent+label",
-                            textfont=dict(color="black"),
-                            hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
-                            showlegend=(i == 0),
-                        ),
-                        row=row_idx, col=col_idx,
-                    )
-                fig.update_layout(title_text=title)
+                return {
+                    "_pie_grid": True,
+                    "facet_vals": _d_facet_vals,
+                    "sec_vals":   _d_sec_vals,
+                    "sec_col":    _derived_sec_col,
+                    "facet_col":  _derived_facet_col,
+                    "slice_col":  slice_col,
+                    "chart_data": chart_data.copy(),
+                    "color_map":  color_map,
+                    "title":      title,
+                }
             elif len(facet_dims) == 1:
                 fig = px.pie(
                     chart_data, values="percentage", names=slice_col,
