@@ -1686,7 +1686,10 @@ def run_analysis(config, df_years, df_genpop):
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
     _fw_response_label = _wrap(_fw_question, width=42) if _fw_question else "Response"
     _fw_axis_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
+    _fw_haxis_label = _wrap(_fw_question, width=80) if _fw_question else "Response"
     _fw_title_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
+    _is_horiz = chart_type in ["Horizontal Bar Chart", "Horizontal Grouped Bar Chart", "Horizontal Stacked Bar Chart"]
+    _fw_x_label = _fw_haxis_label if _is_horiz else _fw_axis_label
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
@@ -1727,7 +1730,7 @@ def run_analysis(config, df_years, df_genpop):
             # Assign axes
             x_col = dim_to_col(axis_x)
             legend_col = dim_to_col(axis_legend)
-            x_dim_label = axis_x if axis_x == "Topic" else (_fw_axis_label if environment == "Financial Well-Being" else group_label)
+            x_dim_label = axis_x if axis_x == "Topic" else (_fw_x_label if environment == "Financial Well-Being" else group_label)
             legend_dim_label = axis_legend if axis_legend == "Topic" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
             chart_data["x"] = chart_data[x_col]
@@ -1761,7 +1764,7 @@ def run_analysis(config, df_years, df_genpop):
                 x_col, legend_col = legend_col, x_col
                 axis_x, axis_legend = axis_legend, axis_x
 
-            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else (_fw_axis_label if environment == "Financial Well-Being" else group_label))
+            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else (_fw_x_label if environment == "Financial Well-Being" else group_label))
             legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else (_fw_response_label if environment == "Financial Well-Being" else group_label))
 
             chart_data["x"] = chart_data[x_col]
@@ -1859,7 +1862,7 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_axis_label if environment == "Financial Well-Being" else group_label)
+        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_x_label if environment == "Financial Well-Being" else group_label)
         legend_dim_label = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
@@ -1917,21 +1920,35 @@ def run_analysis(config, df_years, df_genpop):
                            n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names,
                            show_pct_labels=config.get("show_pct_labels", False))
 
-        # When facets are active and the FW question is on the x-axis, replace each
-        # subplot's x-axis title with "Response" and add one shared question label below.
+        # When facets are active and the FW question is on the axis, replace each
+        # subplot's axis title with "Response" and add one shared question label.
         if (fig is not None and use_facet and environment == "Financial Well-Being"
-                and x_label == _fw_axis_label and _fw_question):
-            fig.update_xaxes(title_text="Response")
-            fig.add_annotation(
-                text=_fw_question,
-                xref="paper", yref="paper",
-                x=0.5, y=-0.12,
-                showarrow=False,
-                font=dict(size=12, color="black"),
-                xanchor="center",
-            )
-            # Add extra bottom margin so the annotation isn't clipped
-            fig.update_layout(margin=dict(b=100))
+                and x_label == _fw_x_label and _fw_question):
+            if _is_horiz:
+                # Horizontal charts: FW question is on the y-axis
+                fig.update_yaxes(title_text="Response")
+                fig.add_annotation(
+                    text=_fw_question,
+                    xref="paper", yref="paper",
+                    x=-0.15, y=0.5,
+                    showarrow=False,
+                    font=dict(size=12, color="black"),
+                    xanchor="center",
+                    textangle=-90,
+                )
+                fig.update_layout(margin=dict(l=130))
+            else:
+                # Vertical charts: FW question is on the x-axis
+                fig.update_xaxes(title_text="Response")
+                fig.add_annotation(
+                    text=_fw_question,
+                    xref="paper", yref="paper",
+                    x=0.5, y=-0.12,
+                    showarrow=False,
+                    font=dict(size=12, color="black"),
+                    xanchor="center",
+                )
+                fig.update_layout(margin=dict(b=100))
 
     # Generate note
     note = generate_note(
