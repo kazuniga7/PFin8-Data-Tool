@@ -1989,13 +1989,13 @@ def run_analysis(config, df_years, df_genpop):
             fig.add_annotation(
                 text=_fw_question,
                 xref="paper", yref="paper",
-                x=0.5, y=-0.20,
+                x=0.5, y=-0.28,
                 showarrow=False,
                 font=dict(size=12, color="black"),
                 xanchor="center",
                 yanchor="top",
             )
-            fig.update_layout(margin=dict(b=150))
+            fig.update_layout(margin=dict(b=180))
 
     # Generate note
     note = generate_note(
