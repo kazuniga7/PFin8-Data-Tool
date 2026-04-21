@@ -2399,7 +2399,7 @@ def main():
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
-            st.markdown('<div style="font-size:0.8rem;color:gray;font-weight:600;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:0.8rem;color:black;font-weight:700;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
         with dl_col:
             # All tables use client-side PNG via html2canvas + CSV + Excel
             import streamlit.components.v1 as components, re as _re_tbl_note
@@ -2495,7 +2495,7 @@ def main():
         #    responsive-mode issues, so annotations at y>1 work fine here) ──────
         from plotly.subplots import make_subplots as _make_subplots
         import base64, re as _re
-        _ev, _eh = 0.04, 0.02
+        _ev, _eh = 0.01, 0.02
         _exp_fig = _make_subplots(
             rows=n_pie_rows, cols=n_pie_cols,
             specs=[[{"type": "pie"}] * n_pie_cols for _ in range(n_pie_rows)],
@@ -2530,7 +2530,7 @@ def main():
         # consistent regardless of figure height:
         #   column headers: 30 px above the plot area
         #   figure title:  100 px above the plot area (always above headers)
-        _exp_h = max(400, n_pie_rows * 160 + 160)
+        _exp_h = max(400, n_pie_rows * 200 + 160)
         _plot_h_px = max(1, _exp_h - 180)  # t=160 + b=20
         _col_hdr_y = 1.0 + 30.0 / _plot_h_px
         _title_y   = 1.0 + 100.0 / _plot_h_px
@@ -2688,7 +2688,7 @@ def main():
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
             st.markdown(f"**{_title}**")
-            st.markdown('<div style="font-size:0.8rem;color:gray;font-weight:600;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:0.8rem;color:black;font-weight:700;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
 
             # Column header row
             if _sec_vals[0] is not None:
