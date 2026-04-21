@@ -2590,19 +2590,24 @@ def main():
             _cur_b4 = _exp_fig.layout.margin.b or 20
             _margin_t4 = _exp_fig.layout.margin.t or 160
             _plot_h4 = max(_exp_h - _margin_t4 - _cur_b4, 1)
-            _note_y4 = -(_cur_b4 + 10) / _plot_h4
+            _note_y4 = -(_cur_b4 + 20) / _plot_h4
             _exp_fig.add_annotation(
                 text="<br>".join(_note_lines4), xref="paper", yref="paper",
                 x=0, y=_note_y4, showarrow=False,
                 font=dict(size=10, color="gray"),
                 xanchor="left", yanchor="top", align="left",
             )
-            _exp_fig.update_layout(margin=dict(b=_cur_b4 + _note_h_px4 + 20))
+            _extra_b4 = _note_h_px4 + 40
+            _exp_fig.update_layout(
+                height=_exp_h + _extra_b4,
+                margin=dict(b=_cur_b4 + _extra_b4),
+            )
 
         # PNG + HTML download bar
         _png_ok = False
+        _exp_fig_h = _exp_fig.layout.height or _exp_h  # may have grown to fit note
         try:
-            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_h, scale=2)
+            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_fig_h, scale=2)
             _png_ok = True
         except Exception:
             pass
@@ -2759,22 +2764,30 @@ def main():
         png_bytes = None
         try:
             _efig = go.Figure(fig)
+            _efig_h_orig5 = _efig.layout.height or 600
             if note:
                 _note_lines5 = _tw5.wrap(_note_plain5, 130)
                 _note_h_px5 = 16 * len(_note_lines5) + 20
-                # _cur_b is the space already reserved for axis labels/title.
-                # The note must go BELOW that zone, not inside it.
+                # Reserve space already used by axis labels/title; note goes below.
                 _cur_b5 = _efig.layout.margin.b or 80
                 _margin_t5 = _efig.layout.margin.t or 80
-                _plot_h5 = max((_efig.layout.height or 600) - _margin_t5 - _cur_b5, 1)
-                _note_y5 = -(_cur_b5 + 10) / _plot_h5  # 10px gap below axis area
+                _plot_h5 = max(_efig_h_orig5 - _margin_t5 - _cur_b5, 1)
+                # 20px gap below axis content so note is clearly separated.
+                _note_y5 = -(_cur_b5 + 20) / _plot_h5
                 _efig.add_annotation(
                     text="<br>".join(_note_lines5), xref="paper", yref="paper",
                     x=0, y=_note_y5, showarrow=False,
                     font=dict(size=10, color="gray"),
                     align="left", xanchor="left", yanchor="top",
                 )
-                _efig.update_layout(margin=dict(b=_cur_b5 + _note_h_px5 + 20))
+                # Expand BOTH height and margin.b by the same amount so the plot
+                # area is unchanged — existing annotations (e.g. FW question) stay
+                # exactly where they were and never overlap axis labels.
+                _extra_b5 = _note_h_px5 + 40
+                _efig.update_layout(
+                    height=_efig_h_orig5 + _extra_b5,
+                    margin=dict(b=_cur_b5 + _extra_b5),
+                )
             _efig_h = _efig.layout.height or 600
             png_bytes = _efig.to_image(format="png", width=2000, height=_efig_h, scale=2)
             png_available = True
