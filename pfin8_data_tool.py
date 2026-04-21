@@ -2610,14 +2610,24 @@ def main():
             _png_ok = True
         except Exception:
             pass
-        # Inject CSS into the exported HTML so legend items show default cursor
+        # Inject CSS + JS into the exported HTML to disable legend clicks and
+        # remove the pointer cursor.  Returning false from plotly_legendclick /
+        # plotly_legenddoubleclick is the Plotly.js API for blocking interaction.
         _exp_html = _exp_fig.to_html(include_plotlyjs="cdn")
-        _exp_html = _exp_html.replace(
-            "</head>",
-            "<style>.legend .traces { cursor: default !important; } "
-            ".legenditem { cursor: default !important; }</style></head>",
-            1,
+        _exp_inject = (
+            "<style>"
+            "g.legend .traces, g.legenditem { cursor: default !important; }"
+            "</style>"
+            "<script>"
+            "window.addEventListener('load', function() {"
+            "  document.querySelectorAll('.js-plotly-plot').forEach(function(d) {"
+            "    d.on('plotly_legendclick', function() { return false; });"
+            "    d.on('plotly_legenddoubleclick', function() { return false; });"
+            "  });"
+            "});"
+            "</script>"
         )
+        _exp_html = _exp_html.replace("</head>", _exp_inject + "</head>", 1)
         _html_b64 = base64.b64encode(_exp_html.encode()).decode()
         if _png_ok:
             _png_b64 = base64.b64encode(_png_bytes).decode()
