@@ -2193,6 +2193,9 @@ def main():
             csv_data = _csv_buf.getvalue()
         else:
             csv_data = pivot_df.to_csv(index=True)
+        if note:
+            import re as _re_note
+            csv_data += "\n\nNote: " + _re_note.sub(r'\*\*(.+?)\*\*', r'\1', note)
         csv_b64 = base64.b64encode(csv_data.encode()).decode()
 
         if facet_groups:
@@ -2307,6 +2310,17 @@ def main():
             excel_buffer = BytesIO()
             pivot_df.to_excel(excel_buffer, index=True, engine="openpyxl")
             excel_buffer.seek(0)
+        if note:
+            from openpyxl import load_workbook as _load_wb
+            import re as _re_note2
+            _note_plain = _re_note2.sub(r'\*\*(.+?)\*\*', r'\1', note)
+            _xnb = BytesIO(excel_buffer.getvalue())
+            _xwb = _load_wb(_xnb)
+            _xws = _xwb.active
+            _xws.cell(row=_xws.max_row + 2, column=1, value=f"Note: {_note_plain}")
+            excel_buffer = BytesIO()
+            _xwb.save(excel_buffer)
+            excel_buffer.seek(0)
         xlsx_b64 = base64.b64encode(excel_buffer.getvalue()).decode()
 
         # Build HTML table string for facet case (used for display and html2canvas PNG)
@@ -2392,6 +2406,17 @@ def main():
                     height=max(400, 80 + n_rows * 35),
                     margin=dict(l=10, r=10, t=50, b=10),
                 )
+            if note:
+                import re as _re_note3
+                _note_plain3 = _re_note3.sub(r'\*\*(.+?)\*\*', r'\1', note)
+                table_fig.add_annotation(
+                    text=_note_plain3, xref="paper", yref="paper",
+                    x=0, y=-0.12, showarrow=False,
+                    font=dict(size=9, color="gray"),
+                    xanchor="left", yanchor="top",
+                )
+                _tb = table_fig.layout.margin.b or 10
+                table_fig.update_layout(margin=dict(b=_tb + 60))
             table_png_bytes = table_fig.to_image(format="png", scale=2)
             table_png_b64 = base64.b64encode(table_png_bytes).decode()
             table_png_available = True
@@ -2607,6 +2632,19 @@ def main():
             ),
         )
 
+        # Add note annotation to export figure (PNG) and prepare note div (HTML)
+        import re as _re_note4
+        _note_plain4 = _re_note4.sub(r'\*\*(.+?)\*\*', r'\1', note) if note else ""
+        _note_html4 = _re_note4.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
+        if note:
+            _exp_fig.add_annotation(
+                text=_note_plain4, xref="paper", yref="paper",
+                x=0, y=-0.03, showarrow=False,
+                font=dict(size=10, color="gray"),
+                xanchor="left", yanchor="top",
+            )
+            _exp_fig.update_layout(margin=dict(b=80))
+
         # PNG + HTML download bar
         _png_ok = False
         try:
@@ -2632,6 +2670,12 @@ def main():
             "</script>"
         )
         _exp_html = _exp_html.replace("</head>", _exp_inject + "</head>", 1)
+        if note:
+            _note_div4 = (
+                f'<div style="font-family:sans-serif;font-size:12px;color:#555;'
+                f'margin:8px 16px 16px;">{_note_html4}</div>'
+            )
+            _exp_html = _exp_html.replace("</body>", _note_div4 + "</body>", 1)
         _html_b64 = base64.b64encode(_exp_html.encode()).decode()
         if _png_ok:
             _png_b64 = base64.b64encode(_png_bytes).decode()
@@ -2744,18 +2788,39 @@ def main():
         render_debug_panel(checks)
 
     elif fig:
-        # Try to generate PNG
+        import base64, re as _re_note5
+        _note_plain5 = _re_note5.sub(r'\*\*(.+?)\*\*', r'\1', note) if note else ""
+        _note_html5  = _re_note5.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
+
+        # Try to generate PNG using an export copy so note annotation doesn't
+        # affect the figure that gets displayed interactively below.
         png_available = False
         png_bytes = None
         try:
-            png_bytes = fig.to_image(format="png", width=2000, height=fig.layout.height or 600, scale=2)
+            _efig = go.Figure(fig)
+            if note:
+                _efig.add_annotation(
+                    text=_note_plain5, xref="paper", yref="paper",
+                    x=0, y=-0.15, showarrow=False,
+                    font=dict(size=10, color="gray"),
+                    xanchor="left", yanchor="top",
+                )
+                _cur_b = _efig.layout.margin.b or 50
+                _efig.update_layout(margin=dict(b=_cur_b + 70))
+            _efig_h = _efig.layout.height or 600
+            png_bytes = _efig.to_image(format="png", width=2000, height=_efig_h, scale=2)
             png_available = True
         except Exception:
             pass
 
         # Build HTML download data
-        import base64
         html_data = fig.to_html(include_plotlyjs="cdn")
+        if note:
+            _note_div5 = (
+                f'<div style="font-family:sans-serif;font-size:12px;color:#555;'
+                f'margin:8px 16px 16px;">{_note_html5}</div>'
+            )
+            html_data = html_data.replace("</body>", _note_div5 + "</body>", 1)
         html_b64 = base64.b64encode(html_data.encode()).decode()
 
         if png_available:
