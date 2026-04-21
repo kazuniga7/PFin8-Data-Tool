@@ -936,7 +936,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     ["Correct", "Incorrect", "Don't Know"],
                 )
                 dist_range_mode = st.selectbox(
-                    "Set Question Ranges . . .",
+                    "Set Question Count Ranges . . .",
                     ["Predefined", "Custom"],
                 )
                 _dist_bucket_options = ["0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"]
