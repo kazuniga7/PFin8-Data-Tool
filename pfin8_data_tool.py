@@ -1485,7 +1485,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 _opts = _aa_info['options']
                 if _aa_info['type'] == 'three_way':
                     axis_x = st.selectbox(
-                        "X-Axis", _opts,
+                        "Select Axis Variable", _opts,
                         index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_x_idx'],
                         key='pfin8_aa_x',
                     )
@@ -1499,7 +1499,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     st.markdown(f"<span style='color:black;font-size:1rem'>Facet (panels): <strong>{axis_facet}</strong></span>", unsafe_allow_html=True)
                 else:
                     axis_x = st.selectbox(
-                        "X-Axis", _opts,
+                        "Select Axis Variable", _opts,
                         index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_idx'],
                         key='pfin8_aa_x',
                     )
