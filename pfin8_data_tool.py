@@ -1685,6 +1685,7 @@ def run_analysis(config, df_years, df_genpop):
         return "<br>".join(lines)
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
     _fw_response_label = _wrap(_fw_question, width=42) if _fw_question else "Response"
+    _fw_axis_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
     _fw_title_label = _wrap(_fw_question, width=100) if _fw_question else "Response"
 
     # Map dimension names to data columns
@@ -1726,7 +1727,7 @@ def run_analysis(config, df_years, df_genpop):
             # Assign axes
             x_col = dim_to_col(axis_x)
             legend_col = dim_to_col(axis_legend)
-            x_dim_label = axis_x if axis_x == "Topic" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
+            x_dim_label = axis_x if axis_x == "Topic" else (_fw_axis_label if environment == "Financial Well-Being" else group_label)
             legend_dim_label = axis_legend if axis_legend == "Topic" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
             chart_data["x"] = chart_data[x_col]
@@ -1760,7 +1761,7 @@ def run_analysis(config, df_years, df_genpop):
                 x_col, legend_col = legend_col, x_col
                 axis_x, axis_legend = axis_legend, axis_x
 
-            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else (_fw_response_label if environment == "Financial Well-Being" else group_label))
+            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else (_fw_axis_label if environment == "Financial Well-Being" else group_label))
             legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else (_fw_response_label if environment == "Financial Well-Being" else group_label))
 
             chart_data["x"] = chart_data[x_col]
@@ -1818,7 +1819,7 @@ def run_analysis(config, df_years, df_genpop):
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
         x_dim_label = dist_range_dim_label if axis_x == dist_range_dim_label else (
-            _fw_response_label if environment == "Financial Well-Being" else group_label
+            _fw_axis_label if environment == "Financial Well-Being" else group_label
         )
         legend_dim_label = dist_range_dim_label if axis_legend == dist_range_dim_label else (
             _fw_response_label if environment == "Financial Well-Being" else group_label
@@ -1858,7 +1859,7 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
+        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_axis_label if environment == "Financial Well-Being" else group_label)
         legend_dim_label = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
