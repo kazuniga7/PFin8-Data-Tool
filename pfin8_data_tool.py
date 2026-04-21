@@ -1927,8 +1927,10 @@ def run_analysis(config, df_years, df_genpop):
             import math as _math
             _n_facets = chart_data[use_facet].nunique()
             _n_rows = _math.ceil(_n_facets / 4)
+            _time_fw_vars = {"time_thinking_finances", "worktime_thinking_finances"}
+            _fw_short_label = "Number of Hours" if config.get("analysis_col") in _time_fw_vars else "Response"
             fig.update_xaxes(title_text="")
-            fig.update_xaxes(title_text="Response", row=1)
+            fig.update_xaxes(title_text=_fw_short_label, row=1)
             fig.add_annotation(
                 text=_fw_question,
                 xref="paper", yref="paper",
