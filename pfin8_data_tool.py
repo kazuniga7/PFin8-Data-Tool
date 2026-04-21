@@ -2532,6 +2532,16 @@ def main():
         #   figure title:  100 px above the plot area (always above headers)
         _exp_h = max(400, n_pie_rows * 200 + 160)
         _plot_h_px = max(1, _exp_h - 180)  # t=160 + b=20
+        # Adaptive width: make each subplot column the same pixel size as each
+        # row so pies fill their cells and there's no wasted horizontal space.
+        # row_frac = fraction of plot height each row occupies
+        # col_frac = fraction of plot width each column occupies
+        # Target: col_frac * plot_w = row_frac * plot_h  →  plot_w = row_frac/col_frac * plot_h
+        _row_frac = (1.0 - _ev * (n_pie_rows - 1)) / max(n_pie_rows, 1)
+        _col_frac = (1.0 - _eh * (n_pie_cols - 1)) / max(n_pie_cols, 1)
+        _ideal_plot_w = int(_row_frac / _col_frac * _plot_h_px)
+        # l=50, r=200 (legend space); minimum 600px
+        _exp_w = max(600, _ideal_plot_w + 250)
         _col_hdr_y = 1.0 + 30.0 / _plot_h_px
         _title_y   = 1.0 + 100.0 / _plot_h_px
 
@@ -2567,8 +2577,9 @@ def main():
             yanchor="bottom",
         )
         _exp_fig.update_layout(
-            margin=dict(l=50, t=160, r=160, b=20),
+            margin=dict(l=50, t=160, r=200, b=20),
             height=_exp_h,
+            width=_exp_w,
             legend=dict(
                 font=dict(color="black"),
                 title=dict(text=_legend_title, font=dict(color="black")),
@@ -2608,7 +2619,7 @@ def main():
         _png_ok = False
         _exp_fig_h = _exp_fig.layout.height or _exp_h  # may have grown to fit note
         try:
-            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_fig_h, scale=1)
+            _png_bytes = _exp_fig.to_image(format="png", width=_exp_w, height=_exp_fig_h, scale=1)
             _png_ok = True
         except Exception:
             pass
