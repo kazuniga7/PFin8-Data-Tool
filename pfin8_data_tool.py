@@ -2576,7 +2576,7 @@ def main():
             )
         _exp_h = max(400, n_pie_rows * 200 + 160)
         _exp_fig.update_layout(
-            title=dict(text=_title, y=0.99, yanchor="top", yref="paper"),
+            title_text=_title,
             margin=dict(l=80, t=160, r=160, b=20),
             height=_exp_h,
             legend=dict(
