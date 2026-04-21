@@ -2368,147 +2368,83 @@ def main():
                 '</table>'
             )
         else:
-            table_html_inner = None
-
-        # Generate table as PNG using Plotly go.Table (non-facet only;
-        # facet tables use client-side html2canvas via st.components)
-        table_png_available = False
-        table_png_b64 = ""
-        try:
-            if not facet_groups:
-                # Non-facet: single header row via go.Table
-                header_vals = [pivot_df.index.name or ""] + list(pivot_df.columns)
-                cell_vals = [[str(v) for v in pivot_df.index]] + [
-                    [str(v) for v in pivot_df[col]] for col in pivot_df.columns
-                ]
-                table_fig = go.Figure(data=[go.Table(
-                    header=dict(
-                        values=[f"<b>{h}</b>" for h in header_vals],
-                        fill_color="#636EFA",
-                        font=dict(color="white", size=13),
-                        align="center",
-                    ),
-                    cells=dict(
-                        values=cell_vals,
-                        fill_color=[["#f9f9f9", "white"] * (len(pivot_df) // 2 + 1)],
-                        font=dict(size=12),
-                        align=["left"] + ["center"] * len(pivot_df.columns),
-                    ),
-                )])
-                n_rows = len(pivot_df)
-                n_cols = len(header_vals)
-                max_header_len = max(len(str(h)) for h in header_vals)
-                col_width = max(150, max_header_len * 12)
-                table_fig.update_layout(
-                    title=f"{chart_title}<br><sup><span style='color:gray;font-size:11px'>Source: TIAA G-FLEC Personal Finance Index</span></sup>",
-                    title_font=dict(size=16),
-                    width=max(900, n_cols * col_width),
-                    height=max(400, 80 + n_rows * 35),
-                    margin=dict(l=10, r=10, t=50, b=10),
-                )
-                if note:
-                    import re as _re_note3, textwrap as _tw3
-                    _note_plain3 = _re_note3.sub(r'\*\*(.+?)\*\*', r'\1', note)
-                    _note_lines3 = _tw3.wrap(_note_plain3, 120)
-                    table_fig.add_annotation(
-                        text="<br>".join(_note_lines3), xref="paper", yref="paper",
-                        x=0, y=-0.12, showarrow=False,
-                        font=dict(size=9, color="gray"),
-                        xanchor="left", yanchor="top",
-                    )
-                    _tb = table_fig.layout.margin.b or 10
-                    table_fig.update_layout(margin=dict(b=_tb + 16 * len(_note_lines3) + 20))
-            _tbl_w = table_fig.layout.width or 2000
-            _tbl_h = table_fig.layout.height or 400
-            table_png_bytes = table_fig.to_image(
-                format="png", width=_tbl_w, height=_tbl_h, scale=1
+            # Non-facet: single header row HTML table
+            _row_lbl2 = pivot_df.index.name or ""
+            _th_nf = (
+                f'<th style="background:#1f4e79;color:white;'
+                f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{_row_lbl2}</th>'
             )
-            table_png_b64 = base64.b64encode(table_png_bytes).decode()
-            table_png_available = True
-        except Exception:
-            pass
+            for _col_nf in pivot_df.columns:
+                _th_nf += (
+                    f'<th style="background:#1f4e79;color:white;'
+                    f'text-align:center !important;padding:8px 12px;border:1px solid #ccc;">{_col_nf}</th>'
+                )
+            _tbody_nf = ""
+            for _i_nf, (_idx_nf, _row_nf) in enumerate(pivot_df.iterrows()):
+                _bg_nf = "#f9f9f9" if _i_nf % 2 == 0 else "white"
+                _tbody_nf += f'<tr style="background:{_bg_nf}">'
+                _tbody_nf += f'<td style="padding:6px 10px;border:1px solid #eee;font-weight:bold;">{_idx_nf}</td>'
+                for _col_nf in pivot_df.columns:
+                    _tbody_nf += f'<td style="text-align:center;padding:6px 10px;border:1px solid #eee;">{_row_nf.get(_col_nf, "")}</td>'
+                _tbody_nf += "</tr>"
+            table_html_inner = (
+                '<style>.pfin8-table thead th { text-align: center !important; }</style>'
+                '<table class="pfin8-table" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">'
+                f'<thead><tr>{_th_nf}</tr></thead>'
+                f'<tbody>{_tbody_nf}</tbody>'
+                '</table>'
+            )
 
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
             st.caption("Source: TIAA G-FLEC Personal Finance Index")
         with dl_col:
-            if facet_groups and table_html_inner:
-                # Facet tables: client-side PNG via html2canvas + CSV + Excel
-                import streamlit.components.v1 as components, re as _re_tbl_note
-                if note:
-                    _tbl_note_plain = _re_tbl_note.sub(r'\*\*(.+?)\*\*', r'\1', note)
-                    _tbl_note_html = '<p style="font-size:11px;color:gray;margin-top:10px;">' + _tbl_note_plain + '</p>'
-                else:
-                    _tbl_note_html = ""
-                component_html = (
-                    '<!DOCTYPE html><html><head>'
-                    '<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>'
-                    '<style>'
-                    '* { box-sizing: border-box; }'
-                    'body { margin: 0; padding: 0; font-family: sans-serif; overflow: hidden; }'
-                    '#capture { position: absolute; left: -9999px; top: 0;'
-                    ' background: white; padding: 20px; width: max-content; }'
-                    '#capture h3 { color: black; margin: 0 0 12px 0; font-size: 18px; }'
-                    '.dl-bar { text-align: right; padding: 8px 0; font-size: 0.875rem; white-space: nowrap; }'
-                    'a { color: #1f77b4; text-decoration: underline; cursor: pointer; }'
-                    '</style></head><body>'
-                    f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}{_tbl_note_html}</div>'
-                    '<div class="dl-bar">Download: '
-                    '<a id="png-btn" href="#">PNG</a> | '
-                    f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv">CSV</a> | '
-                    f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx">Excel</a>'
-                    '</div>'
-                    '<script>'
-                    'document.getElementById("png-btn").addEventListener("click", function(e) {'
-                    '  e.preventDefault();'
-                    '  var el = document.getElementById("capture");'
-                    '  html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true })'
-                    '  .then(function(canvas) {'
-                    '    var a = document.createElement("a");'
-                    '    a.href = canvas.toDataURL("image/png");'
-                    '    a.download = "pfin8_table.png";'
-                    '    document.body.appendChild(a); a.click(); document.body.removeChild(a);'
-                    '  });'
-                    '});'
-                    '</script></body></html>'
-                )
-                components.html(component_html, height=40, scrolling=False)
+            # All tables use client-side PNG via html2canvas + CSV + Excel
+            import streamlit.components.v1 as components, re as _re_tbl_note
+            if note:
+                _tbl_note_plain = _re_tbl_note.sub(r'\*\*(.+?)\*\*', r'\1', note)
+                _tbl_note_html = '<p style="font-size:11px;color:gray;margin-top:10px;">' + _tbl_note_plain + '</p>'
             else:
-                if table_png_available:
-                    download_html = (
-                        f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-                        f'Download: '
-                        f'<a href="data:image/png;base64,{table_png_b64}" download="pfin8_table.png" '
-                        f'style="color:#1f77b4; text-decoration:underline;">PNG</a>'
-                        f' | '
-                        f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
-                        f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-                        f' | '
-                        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
-                        f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
-                        f'</div>'
-                    )
-                else:
-                    download_html = (
-                        f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-                        f'Download: '
-                        f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv" '
-                        f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-                        f' | '
-                        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx" '
-                        f'style="color:#1f77b4; text-decoration:underline;">Excel</a>'
-                        f'</div>'
-                    )
-                st.markdown(download_html, unsafe_allow_html=True)
-
-        if facet_groups and table_html_inner:
-            st.markdown(
-                f'<div style="overflow-x:auto;font-size:0.85rem;">{table_html_inner}</div>',
-                unsafe_allow_html=True,
+                _tbl_note_html = ""
+            component_html = (
+                '<!DOCTYPE html><html><head>'
+                '<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>'
+                '<style>'
+                '* { box-sizing: border-box; }'
+                'body { margin: 0; padding: 0; font-family: sans-serif; overflow: hidden; }'
+                '#capture { position: absolute; left: -9999px; top: 0;'
+                ' background: white; padding: 20px; width: max-content; }'
+                '#capture h3 { color: black; margin: 0 0 12px 0; font-size: 18px; }'
+                '.dl-bar { text-align: right; padding: 8px 0; font-size: 0.875rem; white-space: nowrap; }'
+                'a { color: #1f77b4; text-decoration: underline; cursor: pointer; }'
+                '</style></head><body>'
+                f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}{_tbl_note_html}</div>'
+                '<div class="dl-bar">Download: '
+                '<a id="png-btn" href="#">PNG</a> | '
+                f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv">CSV</a> | '
+                f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{xlsx_b64}" download="pfin8_table.xlsx">Excel</a>'
+                '</div>'
+                '<script>'
+                'document.getElementById("png-btn").addEventListener("click", function(e) {'
+                '  e.preventDefault();'
+                '  var el = document.getElementById("capture");'
+                '  html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true })'
+                '  .then(function(canvas) {'
+                '    var a = document.createElement("a");'
+                '    a.href = canvas.toDataURL("image/png");'
+                '    a.download = "pfin8_table.png";'
+                '    document.body.appendChild(a); a.click(); document.body.removeChild(a);'
+                '  });'
+                '});'
+                '</script></body></html>'
             )
-        else:
-            st.table(pivot_df)
+            components.html(component_html, height=40, scrolling=False)
+
+        st.markdown(
+            f'<div style="overflow-x:auto;font-size:0.85rem;">{table_html_inner}</div>',
+            unsafe_allow_html=True,
+        )
 
         # Display sample size warnings inline
         if checks and checks["warnings"]:
