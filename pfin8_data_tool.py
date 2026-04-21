@@ -1669,9 +1669,22 @@ def run_analysis(config, df_years, df_genpop):
 
     dist_range_dim_label = config.get("dist_range_dim_label", "Question Count Range")
 
-    # Build the Financial Well-Being response label (question text above "Response")
+    # Build the Financial Well-Being response label (question text, wrapped for compactness)
+    def _wrap(text, width=32):
+        words = text.split()
+        lines, cur, cur_len = [], [], 0
+        for word in words:
+            if cur_len + len(word) + (1 if cur else 0) > width:
+                lines.append(" ".join(cur))
+                cur, cur_len = [word], len(word)
+            else:
+                cur.append(word)
+                cur_len += len(word) + (1 if cur_len > 0 else 0)
+        if cur:
+            lines.append(" ".join(cur))
+        return "<br>".join(lines)
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
-    _fw_response_label = _fw_question if _fw_question else "Response"
+    _fw_response_label = _wrap(_fw_question) if _fw_question else "Response"
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
