@@ -2505,80 +2505,20 @@ def main():
         _title      = fig["title"]
 
         n_pie_cols = len(_sec_vals) if _sec_vals[0] is not None else 1
+        n_pie_rows = len(_facet_vals)
 
-        # CSV download (mirrors the export bar on other chart types)
-        import base64, io
-        _csv_bytes = _cdata.to_csv(index=False).encode()
-        _csv_b64 = base64.b64encode(_csv_bytes).decode()
-        st.markdown(
-            f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
-            f'Download: '
-            f'<a href="data:text/csv;base64,{_csv_b64}" download="pfin8_chart.csv" '
-            f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
-            f'</div>',
-            unsafe_allow_html=True,
+        # ── Export figure (make_subplots rendered by kaleido at fixed px — no
+        #    responsive-mode issues, so annotations at y>1 work fine here) ──────
+        from plotly.subplots import make_subplots as _make_subplots
+        import base64, re as _re
+        _ev, _eh = 0.04, 0.02
+        _exp_fig = _make_subplots(
+            rows=n_pie_rows, cols=n_pie_cols,
+            specs=[[{"type": "pie"}] * n_pie_cols for _ in range(n_pie_rows)],
+            vertical_spacing=_ev,
+            horizontal_spacing=_eh,
         )
-
-        # Title
-        st.markdown(f"**{_title}**")
-
-        # Plotly-style shared legend — invisible scatter traces, horizontal orientation
-        _legend_fig = go.Figure()
-        for _lbl, _col in _cmap.items():
-            _legend_fig.add_trace(go.Scatter(
-                x=[None], y=[None],
-                mode="markers",
-                marker=dict(size=10, color=_col, symbol="square"),
-                name=_lbl,
-                showlegend=True,
-            ))
-        _legend_n_rows = max(1, -(-len(_cmap) // 4))  # ceil(n/4) rows
-        _legend_fig.update_layout(
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                font=dict(color="black", size=12),
-                yanchor="middle",
-                y=0.5,
-                xanchor="left",
-                x=0,
-            ),
-            margin=dict(l=0, r=0, t=0, b=0),
-            height=max(30, 28 * _legend_n_rows),
-            xaxis=dict(visible=False, fixedrange=True),
-            yaxis=dict(visible=False, fixedrange=True),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(_legend_fig, use_container_width=True)
-
-        # Column-width ratios: narrow left label column + equal pie columns
-        _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
-
-        # Column header row (no gap= so pie columns keep full width)
-        if _sec_vals[0] is not None:
-            hdr_cols = st.columns(_col_ratios)
-            hdr_cols[0].write("")  # empty corner above row labels
-            for _ci, _sv in enumerate(_sec_vals):
-                hdr_cols[_ci + 1].markdown(
-                    f"<div style='text-align:center; font-weight:600; font-size:0.82rem; "
-                    f"padding:2px 4px; overflow-wrap:break-word; word-break:break-word;'>{_sv}</div>",
-                    unsafe_allow_html=True,
-                )
-
-        # Data rows — one Streamlit row per facet value
         for _ri, _fv in enumerate(_facet_vals):
-            row_cols = st.columns(_col_ratios)
-
-            # Vertical row label
-            row_cols[0].markdown(
-                f"<div style='writing-mode:vertical-rl; transform:rotate(180deg); "
-                f"text-align:center; font-size:0.82rem; font-weight:600; "
-                f"min-height:150px; display:flex; align-items:center; "
-                f"justify-content:center; padding:4px 0;'>{_fv}</div>",
-                unsafe_allow_html=True,
-            )
-
             for _ci, _sv in enumerate(_sec_vals):
                 if _sec_col:
                     _sub = _cdata[(_cdata[_facet_col] == _fv) & (_cdata[_sec_col] == _sv)]
@@ -2587,37 +2527,164 @@ def main():
                 _agg = _sub.groupby(_slice_col)["percentage"].sum().reset_index()
                 _slabels = _agg[_slice_col].tolist()
                 _scolors = [_cmap.get(lbl, "#636EFA") for lbl in _slabels]
-
-                _mini = go.Figure(go.Pie(
-                    values=_agg["percentage"].tolist(),
-                    labels=_slabels,
-                    marker=dict(colors=_scolors),
-                    textposition="inside",
-                    textinfo="percent+label",
-                    textfont=dict(color="black", size=9),
-                    hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
-                    showlegend=False,
-                ))
-                _mini.update_layout(
-                    margin=dict(l=2, r=2, t=2, b=2),
-                    height=160,
-                    showlegend=False,
+                _exp_fig.add_trace(
+                    go.Pie(
+                        values=_agg["percentage"].tolist(),
+                        labels=_slabels,
+                        marker=dict(colors=_scolors),
+                        textposition="inside",
+                        textinfo="percent+label",
+                        textfont=dict(color="black"),
+                        hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
+                        showlegend=(_ri == 0 and _ci == 0),
+                        name=str(_fv),
+                    ),
+                    row=_ri + 1, col=_ci + 1,
                 )
-                row_cols[_ci + 1].plotly_chart(_mini, use_container_width=True)
+        # Column header + row label annotations (fine at fixed export size)
+        _ecw = (1.0 - (_n_ec := n_pie_cols - 1) * _eh) / n_pie_cols
+        if _sec_vals[0] is not None:
+            for _ci, _sv in enumerate(_sec_vals):
+                _cx = _ci * (_ecw + _eh) + _ecw / 2
+                _exp_fig.add_annotation(
+                    text=str(_sv), xref="paper", yref="paper",
+                    x=_cx, y=1.04, showarrow=False,
+                    font=dict(size=11, color="black"),
+                    xanchor="center", yanchor="bottom",
+                )
+        _erh = (1.0 - _ev * (n_pie_rows - 1)) / n_pie_rows if n_pie_rows > 1 else 1.0
+        for _ri, _fv in enumerate(_facet_vals):
+            _ey_top = 1.0 - _ri * (_erh + _ev)
+            _exp_fig.add_annotation(
+                text=str(_fv), xref="paper", yref="paper",
+                x=-0.04, y=_ey_top - _erh / 2, showarrow=False,
+                font=dict(size=10, color="black"),
+                xanchor="center", yanchor="middle", textangle=-90,
+            )
+        _exp_h = max(400, n_pie_rows * 200 + 120)
+        _exp_fig.update_layout(
+            title_text=_title,
+            margin=dict(l=80, t=100, r=160, b=20),
+            height=_exp_h,
+            legend=dict(font=dict(color="black")),
+        )
 
-            # Spacer between data rows
-            st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
+        # PNG + HTML download bar
+        _png_ok = False
+        try:
+            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_h, scale=2)
+            _png_ok = True
+        except Exception:
+            pass
+        _html_b64 = base64.b64encode(_exp_fig.to_html(include_plotlyjs="cdn").encode()).decode()
+        if _png_ok:
+            _png_b64 = base64.b64encode(_png_bytes).decode()
+            _dl_html = (
+                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">Download: '
+                f'<a href="data:image/png;base64,{_png_b64}" download="pfin8_chart.png" '
+                f'style="color:#1f77b4; text-decoration:underline;">PNG</a> | '
+                f'<a href="data:text/html;base64,{_html_b64}" download="pfin8_chart.html" '
+                f'style="color:#1f77b4; text-decoration:underline;">HTML</a></div>'
+            )
+        else:
+            _dl_html = (
+                f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">Download: '
+                f'<a href="data:text/html;base64,{_html_b64}" download="pfin8_chart.html" '
+                f'style="color:#1f77b4; text-decoration:underline;">HTML</a></div>'
+            )
+        st.markdown(_dl_html, unsafe_allow_html=True)
 
-        # Sample size warnings
+        # ── Interactive display: pie grid on left, vertical legend on right ──────
+        _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
+        _grid_col, _leg_col = st.columns([6, 1])
+
+        # Vertical legend in right column — matches Plotly's default right-side legend
+        with _leg_col:
+            _lf = go.Figure()
+            for _lbl, _lc in _cmap.items():
+                _lf.add_trace(go.Scatter(
+                    x=[None], y=[None], mode="markers",
+                    marker=dict(size=10, color=_lc, symbol="square"),
+                    name=_lbl, showlegend=True,
+                ))
+            _leg_h = max(120, n_pie_rows * 160 + 40)
+            _lf.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="v",
+                    font=dict(color="black", size=12),
+                    xanchor="left", x=0,
+                    yanchor="top", y=1,
+                ),
+                margin=dict(l=0, r=0, t=40, b=0),
+                height=_leg_h,
+                xaxis=dict(visible=False, fixedrange=True),
+                yaxis=dict(visible=False, fixedrange=True),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(_lf, use_container_width=True)
+
+        # Grid (title + column headers + data rows) in left column
+        with _grid_col:
+            st.markdown(f"**{_title}**")
+
+            # Column header row
+            if _sec_vals[0] is not None:
+                _hdr = st.columns(_col_ratios)
+                _hdr[0].write("")
+                for _ci, _sv in enumerate(_sec_vals):
+                    _hdr[_ci + 1].markdown(
+                        f"<div style='text-align:center; font-weight:600; font-size:0.82rem; "
+                        f"padding:2px 4px; overflow-wrap:break-word; word-break:break-word;'>{_sv}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+            # Data rows
+            for _ri, _fv in enumerate(_facet_vals):
+                _rc = st.columns(_col_ratios)
+                _rc[0].markdown(
+                    f"<div style='writing-mode:vertical-rl; transform:rotate(180deg); "
+                    f"text-align:center; font-size:0.82rem; font-weight:600; "
+                    f"min-height:150px; display:flex; align-items:center; "
+                    f"justify-content:center; padding:4px 0;'>{_fv}</div>",
+                    unsafe_allow_html=True,
+                )
+                for _ci, _sv in enumerate(_sec_vals):
+                    if _sec_col:
+                        _sub = _cdata[(_cdata[_facet_col] == _fv) & (_cdata[_sec_col] == _sv)]
+                    else:
+                        _sub = _cdata[_cdata[_facet_col] == _fv]
+                    _agg = _sub.groupby(_slice_col)["percentage"].sum().reset_index()
+                    _slabels = _agg[_slice_col].tolist()
+                    _scolors = [_cmap.get(lbl, "#636EFA") for lbl in _slabels]
+                    _mini = go.Figure(go.Pie(
+                        values=_agg["percentage"].tolist(),
+                        labels=_slabels,
+                        marker=dict(colors=_scolors),
+                        textposition="inside",
+                        textinfo="percent+label",
+                        textfont=dict(color="black", size=9),
+                        hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
+                        showlegend=False,
+                    ))
+                    _mini.update_layout(
+                        margin=dict(l=2, r=2, t=2, b=2),
+                        height=160,
+                        showlegend=False,
+                    )
+                    _rc[_ci + 1].plotly_chart(_mini, use_container_width=True)
+
+                st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
+
+        # Sample size warnings, note, debug — full width outside column context
         if checks and checks["warnings"]:
             for warning in checks["warnings"]:
                 st.caption(warning)
 
-        # Note
         if note:
             st.markdown("---")
-            import re
-            _note_html = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note)
+            _note_html = _re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note)
             st.markdown(
                 f'<div style="color: black; font-size: 0.85rem;">{_note_html}</div>',
                 unsafe_allow_html=True,
