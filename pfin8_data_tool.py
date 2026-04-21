@@ -466,9 +466,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
             elif len(facet_dims) >= 2:
                 # No explicit facet_col but two layout dimensions exist — use the
                 # same compact 2D grid as the explicit-facet case.
-                # rows = last dim (topic / group_value), cols = first dim (x / responses).
-                _derived_facet_col = facet_dims[-1]
-                _derived_sec_col   = facet_dims[0] if facet_dims[0] != _derived_facet_col else None
+                # Put the dimension with MORE unique values as rows so we get a
+                # tall grid of wider pies rather than many narrow column pies.
+                _da, _db = facet_dims[-1], facet_dims[0]
+                if chart_data[_da].nunique() >= chart_data[_db].nunique():
+                    _derived_facet_col, _derived_sec_col = _da, _db
+                else:
+                    _derived_facet_col, _derived_sec_col = _db, _da
+                if _derived_sec_col == _derived_facet_col:
+                    _derived_sec_col = None
                 _d_facet_vals = chart_data[_derived_facet_col].unique().tolist()
                 if _derived_facet_col in category_orders:
                     _d_facet_vals = [v for v in category_orders[_derived_facet_col] if v in _d_facet_vals]
@@ -2393,7 +2399,7 @@ def main():
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
-            st.caption("Source: TIAA G-FLEC Personal Finance Index")
+            st.markdown('<div style="font-size:0.8rem;color:gray;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
         with dl_col:
             # All tables use client-side PNG via html2canvas + CSV + Excel
             import streamlit.components.v1 as components, re as _re_tbl_note
@@ -2682,7 +2688,7 @@ def main():
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
             st.markdown(f"**{_title}**")
-            st.caption("Source: TIAA G-FLEC Personal Finance Index")
+            st.markdown('<div style="font-size:0.8rem;color:gray;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
 
             # Column header row
             if _sec_vals[0] is not None:
