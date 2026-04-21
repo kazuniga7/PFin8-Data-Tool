@@ -957,7 +957,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         index=2,
                         key="dist_num_groups",
                     )
-                    st.markdown("**Define your ranges:**")
+                    st.markdown("**Define your ranges**")
                     st.caption("Min: 0 · Max: 8")
                     _dist_groups = []
                     _dist_errors = []
