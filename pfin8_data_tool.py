@@ -488,7 +488,17 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             ),
                             row=r + 1, col=c + 1,
                         )
-                # Manual column header annotations (sec_vals across the top)
+                # Margins: explicitly set all four sides so nothing gets clipped.
+                # t=120 leaves room for both the figure title and column headers.
+                _margin = dict(l=80, t=120, r=80, b=20)
+                # Height: row domain height (px) = plot_area_height * row_domain.
+                # plot_area_height = figure_height - margin.t - margin.b.
+                # We target ~180px per pie row; solve for figure height.
+                _plot_area_h = int(180 / ((1.0 - v_spacing * (n_rows - 1)) / n_rows if n_rows > 1 else 1.0))
+                _fig_height = max(300, _plot_area_h + _margin["t"] + _margin["b"])
+
+                # Manual column header annotations (sec_vals across the top).
+                # y=1.06 places them clearly above the subplot area inside the top margin.
                 _col_domain_w = (1.0 - (n_cols - 1) * h_spacing) / n_cols
                 if sec_vals[0] is not None:
                     for c, sv in enumerate(sec_vals):
@@ -496,14 +506,13 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         fig.add_annotation(
                             text=str(sv),
                             xref="paper", yref="paper",
-                            x=_col_center, y=1.02,
+                            x=_col_center, y=1.06,
                             showarrow=False,
                             font=dict(size=12, color="black"),
                             xanchor="center",
                             yanchor="bottom",
                         )
-                # Add row labels (facet_vals) on the left side, vertically
-                # Calculate row centers using the same formula make_subplots uses
+                # Row labels on the left side, vertically centred on each row.
                 _subplot_h = (1.0 - v_spacing * (n_rows - 1)) / n_rows if n_rows > 1 else 1.0
                 for r, fv in enumerate(facet_vals):
                     _y_top = 1.0 - r * (_subplot_h + v_spacing)
@@ -520,8 +529,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     )
                 fig.update_layout(
                     title_text=title,
-                    margin=dict(l=80, t=80),
-                    height=max(300, n_rows * 250),
+                    margin=_margin,
+                    height=_fig_height,
                 )
             elif len(facet_dims) >= 2:
                 # No explicit facet: combine all dimensions into panel labels
