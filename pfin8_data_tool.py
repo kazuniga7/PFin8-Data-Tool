@@ -2580,15 +2580,19 @@ def main():
                 font=dict(size=10, color="black"),
                 xanchor="center", yanchor="middle", textangle=-90,
             )
+        # Use an annotation for the title so we can reliably position it above
+        # the column headers using paper coords (layout.title.yref is not
+        # supported in all deployed Plotly versions).
+        _exp_fig.add_annotation(
+            text=f"<b>{_title}</b>",
+            xref="paper", yref="paper",
+            x=0.5, y=_title_y,
+            showarrow=False,
+            font=dict(size=15, color="black"),
+            xanchor="center",
+            yanchor="bottom",
+        )
         _exp_fig.update_layout(
-            title=dict(
-                text=_title,
-                y=_title_y,
-                yref="paper",
-                yanchor="bottom",
-                x=0.5,
-                xanchor="center",
-            ),
             margin=dict(l=80, t=160, r=160, b=20),
             height=_exp_h,
             legend=dict(
