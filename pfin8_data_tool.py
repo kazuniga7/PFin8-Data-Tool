@@ -2586,13 +2586,18 @@ def main():
         _note_html4  = _re_note4.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
         if note:
             _note_lines4 = _tw4.wrap(_note_plain4, 130)
+            _note_h_px4 = 16 * len(_note_lines4) + 20
+            _cur_b4 = _exp_fig.layout.margin.b or 20
+            _margin_t4 = _exp_fig.layout.margin.t or 160
+            _plot_h4 = max(_exp_h - _margin_t4 - _cur_b4, 1)
+            _note_y4 = -(_cur_b4 + 10) / _plot_h4
             _exp_fig.add_annotation(
                 text="<br>".join(_note_lines4), xref="paper", yref="paper",
-                x=0, y=-0.03, showarrow=False,
+                x=0, y=_note_y4, showarrow=False,
                 font=dict(size=10, color="gray"),
                 xanchor="left", yanchor="top", align="left",
             )
-            _exp_fig.update_layout(margin=dict(b=16 * len(_note_lines4) + 40))
+            _exp_fig.update_layout(margin=dict(b=_cur_b4 + _note_h_px4 + 20))
 
         # PNG + HTML download bar
         _png_ok = False
@@ -2756,15 +2761,20 @@ def main():
             _efig = go.Figure(fig)
             if note:
                 _note_lines5 = _tw5.wrap(_note_plain5, 130)
+                _note_h_px5 = 16 * len(_note_lines5) + 20
+                # _cur_b is the space already reserved for axis labels/title.
+                # The note must go BELOW that zone, not inside it.
+                _cur_b5 = _efig.layout.margin.b or 80
+                _margin_t5 = _efig.layout.margin.t or 80
+                _plot_h5 = max((_efig.layout.height or 600) - _margin_t5 - _cur_b5, 1)
+                _note_y5 = -(_cur_b5 + 10) / _plot_h5  # 10px gap below axis area
                 _efig.add_annotation(
                     text="<br>".join(_note_lines5), xref="paper", yref="paper",
-                    x=0, y=-0.15, showarrow=False,
+                    x=0, y=_note_y5, showarrow=False,
                     font=dict(size=10, color="gray"),
-                    align="left",
-                    xanchor="left", yanchor="top",
+                    align="left", xanchor="left", yanchor="top",
                 )
-                _cur_b = _efig.layout.margin.b or 50
-                _efig.update_layout(margin=dict(b=_cur_b + 16 * len(_note_lines5) + 30))
+                _efig.update_layout(margin=dict(b=_cur_b5 + _note_h_px5 + 20))
             _efig_h = _efig.layout.height or 600
             png_bytes = _efig.to_image(format="png", width=2000, height=_efig_h, scale=2)
             png_available = True
