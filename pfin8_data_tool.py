@@ -1921,10 +1921,14 @@ def run_analysis(config, df_years, df_genpop):
                            show_pct_labels=config.get("show_pct_labels", False))
 
         # When facets are active and the FW question is on the x-axis (vertical charts only),
-        # replace each subplot's x-axis title with "Response" and add one shared question label below.
+        # show "Response" only on bottom-row subplots and add one shared question label below.
         if (fig is not None and use_facet and environment == "Financial Well-Being"
                 and x_label == _fw_x_label and _fw_question and not _is_horiz):
-            fig.update_xaxes(title_text="Response")
+            import math as _math
+            _n_facets = chart_data[use_facet].nunique()
+            _n_rows = _math.ceil(_n_facets / 4)
+            fig.update_xaxes(title_text="")
+            fig.update_xaxes(title_text="Response", row=_n_rows)
             fig.add_annotation(
                 text=_fw_question,
                 xref="paper", yref="paper",
