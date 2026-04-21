@@ -505,10 +505,15 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         yanchor="middle",
                         textangle=-90,
                     )
+                # Height: pies are circles so they're constrained by the narrower of
+                # row-height or column-width. Estimate column width from a ~900px content
+                # area and cap so single-column layouts don't get enormous pies.
+                _approx_content_width = 900
+                _pie_diameter = min(300, max(120, _approx_content_width // n_cols))
                 fig.update_layout(
                     title_text=title,
                     margin=dict(l=80),
-                    height=max(300, n_rows * 220),
+                    height=max(300, n_rows * _pie_diameter + 100),
                 )
             elif len(facet_dims) >= 2:
                 # No explicit facet: combine all dimensions into panel labels
