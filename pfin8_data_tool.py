@@ -489,22 +489,25 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                             ),
                             row=r + 1, col=c + 1,
                         )
-                # Add row labels (facet_vals) on the left side
+                # Add row labels (facet_vals) on the left side, vertically
+                # Use actual subplot domains for accurate y positioning
                 for r, fv in enumerate(facet_vals):
-                    y_pos = 1 - (r + 0.5) / n_rows
+                    subplot_info = fig.get_subplot(r + 1, 1)
+                    y_center = (subplot_info.domain.y[0] + subplot_info.domain.y[1]) / 2
                     fig.add_annotation(
                         text=str(fv),
                         xref="paper", yref="paper",
-                        x=-0.02, y=y_pos,
+                        x=-0.03, y=y_center,
                         showarrow=False,
                         font=dict(size=11, color="black"),
-                        xanchor="right",
+                        xanchor="center",
                         yanchor="middle",
+                        textangle=-90,
                     )
                 fig.update_layout(
                     title_text=title,
-                    margin=dict(l=120),
-                    height=max(400, n_rows * 250),
+                    margin=dict(l=80),
+                    height=max(300, n_rows * 220),
                 )
             elif len(facet_dims) >= 2:
                 # No explicit facet: combine all dimensions into panel labels
