@@ -427,13 +427,29 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         facet_dims.insert(0, "x")
 
             if facet_col and facet_col in chart_data.columns and chart_data[facet_col].nunique() > 1 and len(facet_dims) >= 2:
-                # Explicit facet provided with multiple dimensions:
-                # use facet_col as the sole panel grouper, averaging other dims within each panel
+                # Explicit facet + secondary dimension:
+                # Organize as a grid grouped by secondary dim (e.g. hours),
+                # with facet_col (e.g. topics) as columns (4 per row).
+                # Panel title = "{secondary} — {facet_val}"
                 facet_vals = chart_data[facet_col].unique().tolist()
                 if facet_col in category_orders:
                     facet_vals = [v for v in category_orders[facet_col] if v in facet_vals]
-                n_facets = len(facet_vals)
+                # Identify secondary dimension (the non-facet_col dim in facet_dims)
+                other_dims = [d for d in facet_dims if d != facet_col and d != "x"]
+                if "x" in facet_dims:
+                    other_dims.insert(0, "x")
+                sec_col = other_dims[0] if other_dims else None
+                if sec_col and sec_col in chart_data.columns:
+                    sec_vals = chart_data[sec_col].unique().tolist()
+                    if sec_col in category_orders:
+                        sec_vals = [v for v in category_orders[sec_col] if v in sec_vals]
+                else:
+                    sec_vals = [None]
+                    sec_col = None
                 n_cols = 4
+                panels = [(sv, fv) for sv in sec_vals for fv in facet_vals]
+                panel_titles = [f"{sv} — {fv}" if sv is not None else str(fv) for sv, fv in panels]
+                n_facets = len(panels)
                 n_pie_rows = -(-n_facets // n_cols)
                 unique_slices = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(unique_slices)}
@@ -441,22 +457,25 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 fig = make_subplots(
                     rows=n_pie_rows, cols=n_cols,
                     specs=[[{"type": "pie"}] * n_cols for _ in range(n_pie_rows)],
-                    subplot_titles=[str(v) for v in facet_vals] + [""] * (n_pie_rows * n_cols - n_facets),
+                    subplot_titles=panel_titles + [""] * (n_pie_rows * n_cols - n_facets),
                     vertical_spacing=v_spacing,
                     horizontal_spacing=0.02,
                 )
-                for i, facet_val in enumerate(facet_vals):
+                for i, (sv, fv) in enumerate(panels):
                     row_idx = i // n_cols + 1
                     col_idx = i % n_cols + 1
-                    subset = chart_data[chart_data[facet_col] == facet_val]
-                    agg = subset.groupby(slice_col)["percentage"].mean().reset_index()
+                    if sec_col:
+                        subset = chart_data[(chart_data[facet_col] == fv) & (chart_data[sec_col] == sv)]
+                    else:
+                        subset = chart_data[chart_data[facet_col] == fv]
+                    agg = subset.groupby(slice_col)["percentage"].sum().reset_index()
                     sub_labels = agg[slice_col].tolist()
                     sub_colors = [color_map[lbl] for lbl in sub_labels]
                     fig.add_trace(
                         go.Pie(
                             values=agg["percentage"].tolist(),
                             labels=sub_labels,
-                            name=str(facet_val),
+                            name=str(fv),
                             marker=dict(colors=sub_colors),
                             textposition="inside",
                             textinfo="percent+label",
