@@ -1235,7 +1235,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     if order:
                         available_values = [v for v in order if v in available_values]
                     subgroups = st.multiselect(
-                        f"Select {analysis_variable} Groups",
+                        f"Select {analysis_variable} Categories",
                         available_values,
                         default=available_values,
                     )
