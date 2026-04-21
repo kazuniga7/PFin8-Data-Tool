@@ -75,7 +75,7 @@ DEMOGRAPHIC_DISPLAY_LABELS = {
 FINANCIAL_WELLBEING_VARIABLES = {
     "Debt Constraint": "debt_constrained_responses",
     "Financial Fragility": "is_Financially_Fragile",
-    "Non-Retirement Savings (One Month)": "suffretirement_savings_responses",
+    "Has Non-Retirement Savings (1 Month of Expenses)": "suffretirement_savings_responses",
     "Time Spent Thinking About Finances (Overall)": "time_thinking_finances",
     "Time Spent Thinking About Finances (At Work)": "worktime_thinking_finances",
 }
