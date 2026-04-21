@@ -94,6 +94,8 @@ TOTAL_CORRECT_LABELS = {
 }
 
 BINARY_DISPLAY = {0: "No", 1: "Yes"}
+SAVINGS_DISPLAY = {1: "Yes", 2: "No", 3: "Not sure"}
+SAVINGS_ORDER = ["Yes", "No", "Not sure"]
 
 THINKING_TIME_ORDER = ["No hours", "1h", "2h", "3-4h", "5-9h", "10-19h", "20h+"]
 
@@ -142,6 +144,8 @@ def load_genpop():
     # Map binary display for has_dependent_children and took_Financial_Education
     df["has_dependent_children_display"] = df["has_dependent_children"].map(BINARY_DISPLAY)
     df["took_Financial_Education_display"] = df["took_Financial_Education"].map(BINARY_DISPLAY)
+    # Map savings display
+    df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].map(SAVINGS_DISPLAY)
     return df
 
 
@@ -827,6 +831,7 @@ def get_category_order(col_name):
         "income_category": INCOME_ORDER,
         "time_thinking_finances": THINKING_TIME_ORDER,
         "worktime_thinking_finances": THINKING_TIME_ORDER,
+        "suffretirement_savings_display": SAVINGS_ORDER,
     }
     return orders.get(col_name)
 
@@ -1248,8 +1253,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     label_visibility="collapsed",
                 )
                 analysis_col = FINANCIAL_WELLBEING_VARIABLES[analysis_variable]
-                available_values = df_genpop[analysis_col].dropna().unique().tolist()
-                order = get_category_order(analysis_col)
+                _display_col = "suffretirement_savings_display" if analysis_col == "suffretirement_savings_responses" else analysis_col
+                available_values = df_genpop[_display_col].dropna().unique().tolist()
+                order = get_category_order(_display_col)
                 if order:
                     available_values = [v for v in order if v in available_values]
                 else:
@@ -1589,6 +1595,13 @@ def run_analysis(config, df_years, df_genpop):
             group_col = "took_Financial_Education_display"
             group_label = DEMOGRAPHIC_DISPLAY_LABELS.get("took_Financial_Education", config["analysis_variable"])
             analysis_col = "took_Financial_Education_display"
+            if config["subgroups"]:
+                df = df[df[group_col].isin(config["subgroups"])]
+        elif analysis_col == "suffretirement_savings_responses":
+            df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].map(SAVINGS_DISPLAY)
+            group_col = "suffretirement_savings_display"
+            group_label = FINANCIAL_WELLBEING_LABELS.get("suffretirement_savings_responses", config["analysis_variable"])
+            analysis_col = "suffretirement_savings_display"
             if config["subgroups"]:
                 df = df[df[group_col].isin(config["subgroups"])]
         else:
