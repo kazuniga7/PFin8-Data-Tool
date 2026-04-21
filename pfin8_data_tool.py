@@ -2419,7 +2419,9 @@ def main():
                 '.dl-bar { text-align: right; padding: 8px 0; font-size: 0.875rem; white-space: nowrap; }'
                 'a { color: #1f77b4; text-decoration: underline; cursor: pointer; }'
                 '</style></head><body>'
-                f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}{_tbl_note_html}</div>'
+                f'<div id="capture"><h3>{chart_title}</h3>'
+                f'<p style="font-size:12px;color:gray;margin:2px 0 8px 0;">Source: TIAA G-FLEC Personal Finance Index</p>'
+                f'{table_html_inner}{_tbl_note_html}</div>'
                 '<div class="dl-bar">Download: '
                 '<a id="png-btn" href="#">PNG</a> | '
                 f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv">CSV</a> | '
@@ -2555,7 +2557,7 @@ def main():
         # the column headers using paper coords (layout.title.yref is not
         # supported in all deployed Plotly versions).
         _exp_fig.add_annotation(
-            text=f"<b>{_title}</b>",
+            text=f"<b>{_title}</b><br><span style='font-size:11px;color:gray'>Source: TIAA G-FLEC Personal Finance Index</span>",
             xref="paper", yref="paper",
             x=0.5, y=_title_y,
             showarrow=False,
@@ -2617,10 +2619,15 @@ def main():
             "</script>"
         )
         _exp_html = _exp_html.replace("</head>", _exp_inject + "</head>", 1)
+        _src_div4 = (
+            '<div style="font-family:sans-serif;font-size:12px;color:gray;margin:4px 16px 8px;">'
+            'Source: TIAA G-FLEC Personal Finance Index</div>'
+        )
+        _exp_html = _exp_html.replace("</body>", _src_div4 + "</body>", 1)
         if note:
             _note_div4 = (
                 f'<div style="font-family:sans-serif;font-size:12px;color:#555;'
-                f'margin:8px 16px 16px;">{_note_html4}</div>'
+                f'margin:4px 16px 16px;">{_note_html4}</div>'
             )
             _exp_html = _exp_html.replace("</body>", _note_div4 + "</body>", 1)
         _html_b64 = base64.b64encode(_exp_html.encode()).decode()
@@ -2670,6 +2677,7 @@ def main():
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
             st.markdown(f"**{_title}**")
+            st.caption("Source: TIAA G-FLEC Personal Finance Index")
 
             # Column header row
             if _sec_vals[0] is not None:
