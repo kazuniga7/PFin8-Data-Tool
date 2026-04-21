@@ -458,7 +458,8 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 for r in range(n_rows):
                     for c in range(n_cols):
                         subplot_titles.append(str(sec_vals[c]) if r == 0 and sec_vals[0] is not None else "")
-                v_spacing = min(0.05, 0.9 / (n_rows - 1)) if n_rows > 1 else 0
+                # Keep vertical spacing tight so gaps don't blow up
+                v_spacing = 0.02 if n_rows > 1 else 0
                 fig = make_subplots(
                     rows=n_rows, cols=n_cols,
                     specs=[[{"type": "pie"}] * n_cols for _ in range(n_rows)],
@@ -505,15 +506,21 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                         yanchor="middle",
                         textangle=-90,
                     )
-                # Height: pies are circles so they're constrained by the narrower of
-                # row-height or column-width. Estimate column width from a ~900px content
-                # area and cap so single-column layouts don't get enormous pies.
-                _approx_content_width = 900
-                _pie_diameter = min(300, max(120, _approx_content_width // n_cols))
+                # Pies render as circles, constrained by min(domain_width_px, domain_height_px).
+                # With use_container_width=True the figure renders at ~900px.
+                # Compute the pie diameter from column domain width, then back-calculate
+                # the figure height so each row domain equals that diameter (no blank space).
+                _render_width = 900
+                _h_gap_fraction = 0.02
+                _col_domain_frac = (1.0 - (n_cols - 1) * _h_gap_fraction) / n_cols
+                _pie_diameter = max(100, int(_col_domain_frac * _render_width))
+                # figure_height = n_rows * _pie_diameter / (1 - v_spacing * (n_rows - 1))
+                _v_denom = 1.0 - v_spacing * (n_rows - 1) if n_rows > 1 else 1.0
+                _plot_height = int(n_rows * _pie_diameter / _v_denom) if _v_denom > 0 else n_rows * _pie_diameter
                 fig.update_layout(
                     title_text=title,
                     margin=dict(l=80),
-                    height=max(300, n_rows * _pie_diameter + 100),
+                    height=max(300, _plot_height + 80),
                 )
             elif len(facet_dims) >= 2:
                 # No explicit facet: combine all dimensions into panel labels
