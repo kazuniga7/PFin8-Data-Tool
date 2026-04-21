@@ -51,7 +51,7 @@ DEMOGRAPHIC_VARIABLES = {
     "Gender": "gender",
     "Race/Ethnicity": "race_ethnicity_category",
     "Marital Status": "marital_status",
-    "Dependent Children Under 18": "has_dependent_children",
+    "Has Dependent Children Under 18": "has_dependent_children",
     "Education": "education_category",
     "Financial Education Course": "took_Financial_Education",
     "Employment Status": "employment_category",
@@ -1217,9 +1217,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             "errors": age_errors,
                         }
 
-                elif analysis_variable == "Dependent Children Under 18":
+                elif analysis_variable == "Has Dependent Children Under 18":
                     subgroups = st.multiselect(
-                        "Select Groups",
+                        "Select Response Category",
                         ["Yes", "No"],
                         default=["Yes", "No"],
                     )
@@ -1576,7 +1576,7 @@ def run_analysis(config, df_years, df_genpop):
             analysis_col = "custom_age_group"
 
             # Set category order to match the label order (used later via config)
-        elif config["analysis_variable"] == "Dependent Children Under 18":
+        elif config["analysis_variable"] == "Has Dependent Children Under 18":
             df["has_dependent_children_display"] = df["has_dependent_children"].map(BINARY_DISPLAY)
             group_col = "has_dependent_children_display"
             group_label = DEMOGRAPHIC_DISPLAY_LABELS.get("has_dependent_children", config["analysis_variable"])
