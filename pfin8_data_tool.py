@@ -428,7 +428,9 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
 
             if facet_col and facet_col in chart_data.columns and chart_data[facet_col].nunique() > 1 and len(facet_dims) >= 2:
                 # 2D grid: rows = facet_col (e.g. topics), cols = axis variable (e.g. hours)
-                # Column headers shown on top row; row labels shown on left side
+                # Return a special dict so the rendering layer can use st.columns() instead
+                # of a single make_subplots figure — Plotly's responsive mode makes it
+                # impossible to reliably position annotations or control row heights.
                 facet_vals = chart_data[facet_col].unique().tolist()
                 if facet_col in category_orders:
                     facet_vals = [v for v in category_orders[facet_col] if v in facet_vals]
@@ -441,7 +443,6 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                     sec_vals = chart_data[sec_col].unique().tolist()
                     if sec_col in category_orders:
                         sec_vals = [v for v in category_orders[sec_col] if v in sec_vals]
-                    # Also check "x" column order
                     x_order_key = "x" if "x" in category_orders else sec_col
                     if x_order_key in category_orders:
                         _xo = category_orders[x_order_key]
@@ -449,89 +450,19 @@ def create_chart(chart_data, chart_type, title, x_label, y_label, color_col=None
                 else:
                     sec_vals = [None]
                     sec_col = None
-                n_rows = len(facet_vals)
-                n_cols = len(sec_vals) if sec_vals[0] is not None else 1
                 unique_slices = list(chart_data[slice_col].unique())
                 color_map = {val: streamlit_colors[i % len(streamlit_colors)] for i, val in enumerate(unique_slices)}
-                # Keep vertical spacing tight
-                v_spacing = 0.02 if n_rows > 1 else 0
-                h_spacing = 0.02
-                # Do NOT pass subplot_titles — it causes Plotly to reserve title-row
-                # space for every row (even empty-string rows), creating large gaps.
-                # Column headers are added as manual annotations below.
-                fig = make_subplots(
-                    rows=n_rows, cols=n_cols,
-                    specs=[[{"type": "pie"}] * n_cols for _ in range(n_rows)],
-                    vertical_spacing=v_spacing,
-                    horizontal_spacing=h_spacing,
-                )
-                for r, fv in enumerate(facet_vals):
-                    for c, sv in enumerate(sec_vals):
-                        if sec_col:
-                            subset = chart_data[(chart_data[facet_col] == fv) & (chart_data[sec_col] == sv)]
-                        else:
-                            subset = chart_data[chart_data[facet_col] == fv]
-                        agg = subset.groupby(slice_col)["percentage"].sum().reset_index()
-                        sub_labels = agg[slice_col].tolist()
-                        sub_colors = [color_map[lbl] for lbl in sub_labels]
-                        fig.add_trace(
-                            go.Pie(
-                                values=agg["percentage"].tolist(),
-                                labels=sub_labels,
-                                name=str(fv),
-                                marker=dict(colors=sub_colors),
-                                textposition="inside",
-                                textinfo="percent+label",
-                                textfont=dict(color="black"),
-                                hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
-                                showlegend=(r == 0 and c == 0),
-                            ),
-                            row=r + 1, col=c + 1,
-                        )
-                # Margins: explicitly set all four sides so nothing gets clipped.
-                # t=120 leaves room for both the figure title and column headers.
-                _margin = dict(l=80, t=120, r=80, b=20)
-                # Height: row domain height (px) = plot_area_height * row_domain.
-                # plot_area_height = figure_height - margin.t - margin.b.
-                # We target ~180px per pie row; solve for figure height.
-                _plot_area_h = int(180 / ((1.0 - v_spacing * (n_rows - 1)) / n_rows if n_rows > 1 else 1.0))
-                _fig_height = max(300, _plot_area_h + _margin["t"] + _margin["b"])
-
-                # Manual column header annotations (sec_vals across the top).
-                # y=1.06 places them clearly above the subplot area inside the top margin.
-                _col_domain_w = (1.0 - (n_cols - 1) * h_spacing) / n_cols
-                if sec_vals[0] is not None:
-                    for c, sv in enumerate(sec_vals):
-                        _col_center = c * (_col_domain_w + h_spacing) + _col_domain_w / 2
-                        fig.add_annotation(
-                            text=str(sv),
-                            xref="paper", yref="paper",
-                            x=_col_center, y=1.06,
-                            showarrow=False,
-                            font=dict(size=12, color="black"),
-                            xanchor="center",
-                            yanchor="bottom",
-                        )
-                # Row labels on the left side, vertically centred on each row.
-                _subplot_h = (1.0 - v_spacing * (n_rows - 1)) / n_rows if n_rows > 1 else 1.0
-                for r, fv in enumerate(facet_vals):
-                    _y_top = 1.0 - r * (_subplot_h + v_spacing)
-                    _y_center = _y_top - _subplot_h / 2
-                    fig.add_annotation(
-                        text=str(fv),
-                        xref="paper", yref="paper",
-                        x=-0.03, y=_y_center,
-                        showarrow=False,
-                        font=dict(size=11, color="black"),
-                        xanchor="center",
-                        yanchor="middle",
-                        textangle=-90,
-                    )
-                fig.update_layout(
-                    title_text=title,
-                    margin=_margin,
-                    height=_fig_height,
-                )
+                return {
+                    "_pie_grid": True,
+                    "facet_vals": facet_vals,
+                    "sec_vals": sec_vals,
+                    "sec_col": sec_col,
+                    "facet_col": facet_col,
+                    "slice_col": slice_col,
+                    "chart_data": chart_data.copy(),
+                    "color_map": color_map,
+                    "title": title,
+                }
             elif len(facet_dims) >= 2:
                 # No explicit facet: combine all dimensions into panel labels
                 chart_data["_pie_facet"] = chart_data[facet_dims[0]].astype(str) + " — " + chart_data[facet_dims[1]].astype(str)
@@ -1994,7 +1925,7 @@ def run_analysis(config, df_years, df_genpop):
         # then add the full question once as a shared label below the bottom row.
         # The annotation uses y=-0.20 (rather than -0.12) to clear long angled tick labels,
         # and margin.b=150 provides the extra space.
-        if (fig is not None and use_facet and environment == "Financial Well-Being"
+        if (fig is not None and not isinstance(fig, dict) and use_facet and environment == "Financial Well-Being"
                 and x_label == _fw_x_label and _fw_question and not _is_horiz):
             _time_fw_vars = {"time_thinking_finances", "worktime_thinking_finances"}
             _fw_short_label = "Number of Hours" if config.get("analysis_col") in _time_fw_vars else "Response"
@@ -2557,6 +2488,95 @@ def main():
             st.markdown(f'<div style="color: black; font-size: 0.85rem;">{note_html}</div>', unsafe_allow_html=True)
 
         # Debug panel
+        render_debug_panel(checks)
+
+    elif isinstance(fig, dict) and fig.get("_pie_grid"):
+        # 2D pie chart grid rendered with Streamlit columns so headers and row labels
+        # are HTML elements — immune to Plotly.js responsive-mode clipping issues.
+        import plotly.graph_objects as go
+
+        _facet_vals = fig["facet_vals"]
+        _sec_vals   = fig["sec_vals"]
+        _sec_col    = fig["sec_col"]
+        _facet_col  = fig["facet_col"]
+        _slice_col  = fig["slice_col"]
+        _cdata      = fig["chart_data"]
+        _cmap       = fig["color_map"]
+        _title      = fig["title"]
+
+        n_pie_cols = len(_sec_vals) if _sec_vals[0] is not None else 1
+
+        # Title
+        st.markdown(f"**{_title}**")
+
+        # Column-width ratios: narrow left label column + equal pie columns
+        _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
+
+        # Column header row
+        if _sec_vals[0] is not None:
+            hdr_cols = st.columns(_col_ratios)
+            hdr_cols[0].write("")  # empty corner above row labels
+            for _ci, _sv in enumerate(_sec_vals):
+                hdr_cols[_ci + 1].markdown(
+                    f"<div style='text-align:center; font-weight:600; font-size:0.88rem;"
+                    f"padding:4px 0;'>{_sv}</div>",
+                    unsafe_allow_html=True,
+                )
+
+        # Data rows — one Streamlit row per facet value
+        for _ri, _fv in enumerate(_facet_vals):
+            row_cols = st.columns(_col_ratios)
+
+            # Vertical row label
+            row_cols[0].markdown(
+                f"<div style='writing-mode:vertical-rl; transform:rotate(180deg); "
+                f"text-align:center; font-size:0.82rem; font-weight:600; "
+                f"min-height:140px; display:flex; align-items:center; "
+                f"justify-content:center;'>{_fv}</div>",
+                unsafe_allow_html=True,
+            )
+
+            for _ci, _sv in enumerate(_sec_vals):
+                if _sec_col:
+                    _sub = _cdata[(_cdata[_facet_col] == _fv) & (_cdata[_sec_col] == _sv)]
+                else:
+                    _sub = _cdata[_cdata[_facet_col] == _fv]
+                _agg = _sub.groupby(_slice_col)["percentage"].sum().reset_index()
+                _slabels = _agg[_slice_col].tolist()
+                _scolors = [_cmap.get(lbl, "#636EFA") for lbl in _slabels]
+
+                _mini = go.Figure(go.Pie(
+                    values=_agg["percentage"].tolist(),
+                    labels=_slabels,
+                    marker=dict(colors=_scolors),
+                    textposition="inside",
+                    textinfo="percent+label",
+                    textfont=dict(color="black", size=9),
+                    hovertemplate="%{label}: %{value:.0f}%<extra></extra>",
+                    showlegend=False,
+                ))
+                _mini.update_layout(
+                    margin=dict(l=2, r=2, t=2, b=2),
+                    height=150,
+                    showlegend=False,
+                )
+                row_cols[_ci + 1].plotly_chart(_mini, use_container_width=True)
+
+        # Sample size warnings
+        if checks and checks["warnings"]:
+            for warning in checks["warnings"]:
+                st.caption(warning)
+
+        # Note
+        if note:
+            st.markdown("---")
+            import re
+            _note_html = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note)
+            st.markdown(
+                f'<div style="color: black; font-size: 0.85rem;">{_note_html}</div>',
+                unsafe_allow_html=True,
+            )
+
         render_debug_panel(checks)
 
     elif fig:
