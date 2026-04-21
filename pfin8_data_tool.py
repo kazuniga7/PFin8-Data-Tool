@@ -2602,8 +2602,8 @@ def main():
                 itemdoubleclick=False,
                 x=1.02,
                 xanchor="left",
-                y=0.5,
-                yanchor="middle",
+                y=1,
+                yanchor="top",
             ),
         )
 
