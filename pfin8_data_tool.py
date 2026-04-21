@@ -1262,8 +1262,10 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     available_values = sorted(available_values, key=str)
                 if analysis_variable == "Has Sufficient Non-Retirement Savings":
                     st.caption("*Note: Sufficient savings means enough to cover 1 month of expenses.")
+                _time_vars = {"Time Spent Thinking About Finances (Overall)", "Time Spent Thinking About Finances (At Work)"}
+                _subgroup_label = "Select Number of Hours" if analysis_variable in _time_vars else "Select Response Categories"
                 subgroups = st.multiselect(
-                    f"Select Response Categories",
+                    _subgroup_label,
                     available_values,
                     default=available_values,
                 )
