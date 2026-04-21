@@ -85,7 +85,7 @@ FINANCIAL_WELLBEING_LABELS = {
     "is_Financially_Fragile": "How confident are you that you could come up with $2,000 if an unexpected need arose within the next month?",
     "suffretirement_savings_responses": "Do you have non-retirement savings sufficient to cover one month of living expenses if needed?",
     "time_thinking_finances": "How much time (hours per week) do you typically spend thinking about and dealing with issues related to your personal finances?",
-    "worktime_thinking_finances": "How many of these hours occur at work?",
+    "worktime_thinking_finances": "Of the time (hours per week) you typically spend thinking about and dealing with issues and problems related to your personal finances, how much of this occurs at work?",
 }
 
 TOTAL_CORRECT_LABELS = {
