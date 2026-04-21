@@ -2598,6 +2598,8 @@ def main():
             legend=dict(
                 font=dict(color="black"),
                 title=dict(text=_legend_title, font=dict(color="black")),
+                itemclick=False,
+                itemdoubleclick=False,
             ),
         )
 
@@ -2608,7 +2610,15 @@ def main():
             _png_ok = True
         except Exception:
             pass
-        _html_b64 = base64.b64encode(_exp_fig.to_html(include_plotlyjs="cdn").encode()).decode()
+        # Inject CSS into the exported HTML so legend items show default cursor
+        _exp_html = _exp_fig.to_html(include_plotlyjs="cdn")
+        _exp_html = _exp_html.replace(
+            "</head>",
+            "<style>.legend .traces { cursor: default !important; } "
+            ".legenditem { cursor: default !important; }</style></head>",
+            1,
+        )
+        _html_b64 = base64.b64encode(_exp_html.encode()).decode()
         if _png_ok:
             _png_b64 = base64.b64encode(_png_bytes).decode()
             _dl_html = (
@@ -2630,35 +2640,27 @@ def main():
         _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
         _grid_col, _leg_col = st.columns([9, 1])
 
-        # Vertical legend in right column — matches Plotly's default right-side legend
+        # Vertical legend in right column — plain HTML so there is no pointer
+        # cursor or click behaviour (a Plotly figure always shows hand cursor
+        # on legend items even when itemclick=False).
         with _leg_col:
-            _lf = go.Figure()
-            for _lbl, _lc in _cmap.items():
-                _lf.add_trace(go.Scatter(
-                    x=[None], y=[None], mode="markers",
-                    marker=dict(size=10, color=_lc, symbol="square"),
-                    name=_lbl, showlegend=True,
-                ))
-            _leg_h = max(120, n_pie_rows * 160 + 40)
-            _lf.update_layout(
-                showlegend=True,
-                legend=dict(
-                    orientation="v",
-                    title=dict(text=_legend_title, font=dict(color="black", size=12)),
-                    font=dict(color="black", size=12),
-                    xanchor="left", x=0,
-                    yanchor="top", y=1,
-                    itemclick=False,
-                    itemdoubleclick=False,
-                ),
-                margin=dict(l=0, r=0, t=40, b=0),
-                height=_leg_h,
-                xaxis=dict(visible=False, fixedrange=True),
-                yaxis=dict(visible=False, fixedrange=True),
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
+            _leg_html = (
+                "<div style='font-family:sans-serif; font-size:12px; "
+                "padding-top:44px; line-height:1.6;'>"
+                f"<div style='font-weight:600; margin-bottom:6px; color:black;'>"
+                f"{_legend_title}</div>"
             )
-            st.plotly_chart(_lf, use_container_width=True, config={"displayModeBar": False})
+            for _lbl, _lc in _cmap.items():
+                _leg_html += (
+                    f"<div style='display:flex; align-items:center; "
+                    f"margin-bottom:5px; cursor:default;'>"
+                    f"<span style='display:inline-block; width:10px; height:10px; "
+                    f"background:{_lc}; border-radius:1px; margin-right:6px; "
+                    f"flex-shrink:0;'></span>"
+                    f"<span style='color:black;'>{_lbl}</span></div>"
+                )
+            _leg_html += "</div>"
+            st.markdown(_leg_html, unsafe_allow_html=True)
 
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
