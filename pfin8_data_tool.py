@@ -1496,7 +1496,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         key='pfin8_aa_legend',
                     )
                     axis_facet = [d for d in _opts if d != axis_x and d != axis_legend][0]
-                    st.markdown(f"<span style='color:black;font-size:1rem'>Facet (panels): <strong>{axis_facet}</strong></span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:black;font-size:1rem'>Split Into Charts By: <strong>{axis_facet}</strong></span>", unsafe_allow_html=True)
                 else:
                     axis_x = st.selectbox(
                         "Select Axis Variable", _opts,
