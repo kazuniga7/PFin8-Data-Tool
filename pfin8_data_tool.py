@@ -2418,7 +2418,11 @@ def main():
                     )
                     _tb = table_fig.layout.margin.b or 10
                     table_fig.update_layout(margin=dict(b=_tb + 16 * len(_note_lines3) + 20))
-            table_png_bytes = table_fig.to_image(format="png", scale=2)
+            _tbl_w = table_fig.layout.width or 2000
+            _tbl_h = table_fig.layout.height or 400
+            table_png_bytes = table_fig.to_image(
+                format="png", width=_tbl_w, height=_tbl_h, scale=1
+            )
             table_png_b64 = base64.b64encode(table_png_bytes).decode()
             table_png_available = True
         except Exception:
