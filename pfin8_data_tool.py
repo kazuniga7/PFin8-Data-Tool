@@ -1418,8 +1418,6 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         axis_legend = None
         axis_facet = None
         single_group_value = None
-        axis_assignment_shown = False
-        _aa_info = None  # Info for deferred Axis Assignment expander
         n_response_cats = len(selected_response_cats) if selected_response_cats else (3 if view_mode and "Response Category" in view_mode else 1)
 
         if analysis_type == "Topic" and view_mode and "Response Category" in view_mode:
@@ -1442,12 +1440,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     elif subgroups and len(subgroups) == 1:
                         single_group_value = str(subgroups[0])
                 else:
-                    axis_assignment_shown = True
-                    _dim2 = ["Topic", group_dim_label]
-                    _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
-                    _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
-                    axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
-                    axis_legend = [d for d in _dim2 if d != axis_x][0]
+                    # Both dims have multiple values: group on x, topics in legend
+                    axis_x = group_dim_label
+                    axis_legend = "Topic"
             else:
                 dimensions = ["Topic", group_dim_label, "Response Category"]
 
@@ -1457,35 +1452,26 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     axis_facet = group_dim_label
                     single_group_value = selected_topics[0] if selected_topics else None
                 elif n_topics == 1 and n_group > 1:
+                    # Topic is single (title); group on x, response category in legend
                     single_group_value = selected_topics[0] if selected_topics else None
-                    remaining = [d for d in dimensions if d != "Topic"]
-                    axis_assignment_shown = True
-                    _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
-                    _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
-                    axis_x = _curr_x if _curr_x in remaining else remaining[0]
-                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    axis_x = group_dim_label
+                    axis_legend = "Response Category"
                     axis_facet = "Topic"
                 elif n_group == 1 and n_topics > 1:
+                    # Group is single (title); topic on x, response category in legend
                     if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                         single_group_value = str(selected_years[0])
                     elif subgroups and len(subgroups) == 1:
                         single_group_value = str(subgroups[0])
-                    remaining = [d for d in dimensions if d != group_dim_label]
-                    axis_assignment_shown = True
-                    _aa_info = {'type': 'two_way', 'options': remaining, 'default_idx': 0}
-                    _curr_x = st.session_state.get('pfin8_aa_x', remaining[0])
-                    axis_x = _curr_x if _curr_x in remaining else remaining[0]
-                    axis_legend = [d for d in remaining if d != axis_x][0]
+                    axis_x = "Topic"
+                    axis_legend = "Response Category"
                     axis_facet = group_dim_label
                 else:
-                    axis_assignment_shown = True
-                    _aa_info = {'type': 'three_way', 'options': dimensions, 'default_x_idx': 1}
-                    _curr_x = st.session_state.get('pfin8_aa_x', dimensions[1])
-                    axis_x = _curr_x if _curr_x in dimensions else dimensions[1]
-                    _rem = [d for d in dimensions if d != axis_x]
-                    _curr_legend = st.session_state.get('pfin8_aa_legend', _rem[0])
-                    axis_legend = _curr_legend if _curr_legend in _rem else _rem[0]
-                    axis_facet = [d for d in dimensions if d != axis_x and d != axis_legend][0]
+                    # All three dims have multiple values: group on x, response category
+                    # in legend, topics as facets
+                    axis_x = group_dim_label
+                    axis_legend = "Response Category"
+                    axis_facet = "Topic"
 
         elif analysis_type == "Topic":
             if n_topics == 1 and n_group > 1:
@@ -1504,12 +1490,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_legend = group_dim_label
                 single_group_value = selected_topics[0] if selected_topics else None
             else:
-                axis_assignment_shown = True
-                _dim2 = ["Topic", group_dim_label]
-                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
-                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
-                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
-                axis_legend = [d for d in _dim2 if d != axis_x][0]
+                # Both dims have multiple values: group on x, topics in legend
+                axis_x = group_dim_label
+                axis_legend = "Topic"
 
         elif analysis_type == "Response Distribution":
             if n_dist_ranges == 1 and n_group > 1:
@@ -1526,12 +1509,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_x = dist_range_dim_label
                 axis_legend = group_dim_label
             else:
-                axis_assignment_shown = True
-                _dim2 = [dist_range_dim_label, group_dim_label]
-                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
-                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
-                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
-                axis_legend = [d for d in _dim2 if d != axis_x][0]
+                # Both dims have multiple values: group on x, score ranges in legend
+                axis_x = group_dim_label
+                axis_legend = dist_range_dim_label
 
         else:
             if n_total_correct == 1 and n_group > 1:
@@ -1549,12 +1529,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 axis_x = "P-Fin 8 Score (# Correct)"
                 axis_legend = group_dim_label
             else:
-                axis_assignment_shown = True
-                _dim2 = ["P-Fin 8 Score (# Correct)", group_dim_label]
-                _aa_info = {'type': 'two_way', 'options': _dim2, 'default_idx': 0}
-                _curr_x = st.session_state.get('pfin8_aa_x', _dim2[0])
-                axis_x = _curr_x if _curr_x in _dim2 else _dim2[0]
-                axis_legend = [d for d in _dim2 if d != axis_x][0]
+                # Both dims have multiple values: group on x, scores in legend
+                axis_x = group_dim_label
+                axis_legend = "P-Fin 8 Score (# Correct)"
 
         # Compute n_legend_groups and n_x_groups for chart type validation
         n_legend_groups = 1
@@ -1581,32 +1558,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         elif axis_x == group_dim_label:
             n_x_groups = n_group
 
-        # Section 5: Axis Assignment
-        if axis_assignment_shown and _aa_info:
-            with st.expander("Set Horizontal Axis . . .", expanded=True):
-                _opts = _aa_info['options']
-                if _aa_info['type'] == 'three_way':
-                    axis_x = st.selectbox(
-                        "Select Axis Variable", _opts,
-                        index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_x_idx'],
-                        key='pfin8_aa_x',
-                    )
-                    _rem = [d for d in _opts if d != axis_x]
-                    axis_legend = st.selectbox(
-                        "Legend", _rem,
-                        index=_rem.index(axis_legend) if axis_legend in _rem else 0,
-                        key='pfin8_aa_legend',
-                    )
-                    axis_facet = [d for d in _opts if d != axis_x and d != axis_legend][0]
-                    st.markdown(f"<span style='color:black;font-size:1rem'>Split Into Charts By: <strong>{axis_facet}</strong></span>", unsafe_allow_html=True)
-                else:
-                    axis_x = st.selectbox(
-                        "Select Axis Variable", _opts,
-                        index=_opts.index(axis_x) if axis_x in _opts else _aa_info['default_idx'],
-                        key='pfin8_aa_x',
-                    )
-                    axis_legend = [d for d in _opts if d != axis_x][0]
-                    st.markdown(f"<span style='color:black;font-size:1rem'>Legend: <strong>{axis_legend}</strong></span>", unsafe_allow_html=True)
+        # Section 5 (removed): axis assignment is now fixed — grouping variable always
+        # on x-axis so percentages are unambiguously read as "% within that group".
 
         # Section 6: Chart Type + Show percentages toggle
         with st.expander("Generate Visual . . .", expanded=True):
