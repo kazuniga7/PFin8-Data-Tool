@@ -53,7 +53,7 @@ DEMOGRAPHIC_VARIABLES = {
     "Marital Status": "marital_status",
     "Has Dependent Children Under 18": "has_dependent_children",
     "Education": "education_category",
-    "Financial Education Course": "took_Financial_Education",
+    "Has Participated in Financial Education Course": "took_Financial_Education",
     "Employment Status": "employment_category",
     "Income": "income_category",
 }
@@ -1224,9 +1224,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         ["Yes", "No"],
                         default=["Yes", "No"],
                     )
-                elif analysis_variable == "Financial Education Course":
+                elif analysis_variable == "Has Participated in Financial Education Course":
                     subgroups = st.multiselect(
-                        "Select Groups",
+                        "Select Response Category",
                         ["Yes", "No"],
                         default=["Yes", "No"],
                     )
@@ -1584,7 +1584,7 @@ def run_analysis(config, df_years, df_genpop):
             analysis_col = "has_dependent_children_display"
             if config["subgroups"]:
                 df = df[df[group_col].isin(config["subgroups"])]
-        elif config["analysis_variable"] == "Financial Education Course":
+        elif config["analysis_variable"] == "Has Participated in Financial Education Course":
             df["took_Financial_Education_display"] = df["took_Financial_Education"].map(BINARY_DISPLAY)
             group_col = "took_Financial_Education_display"
             group_label = DEMOGRAPHIC_DISPLAY_LABELS.get("took_Financial_Education", config["analysis_variable"])
