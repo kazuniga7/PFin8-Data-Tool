@@ -1265,6 +1265,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     available_values,
                     default=available_values,
                 )
+                if analysis_variable == "Has Sufficient Non-Retirement Savings":
+                    st.caption("*Note: Sufficient savings means enough to cover 1 month of expenses.")
 
         # Axis assignment
         # Determine the group dimension label
