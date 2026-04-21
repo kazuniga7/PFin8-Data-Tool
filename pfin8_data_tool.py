@@ -2509,30 +2509,43 @@ def main():
         # Title
         st.markdown(f"**{_title}**")
 
+        # Shared HTML color legend — one swatch per slice category
+        _legend_items = "".join(
+            f"<span style='display:inline-flex; align-items:center; margin-right:18px; font-size:0.83rem;'>"
+            f"<span style='display:inline-block; width:12px; height:12px; background:{_cmap[_lbl]}; "
+            f"border-radius:2px; margin-right:5px; flex-shrink:0;'></span>{_lbl}</span>"
+            for _lbl in _cmap
+        )
+        st.markdown(
+            f"<div style='padding:6px 0 10px 0; line-height:1.8;'>{_legend_items}</div>",
+            unsafe_allow_html=True,
+        )
+
         # Column-width ratios: narrow left label column + equal pie columns
+        # Use gap="large" so long column headers don't run into each other
         _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
 
         # Column header row
         if _sec_vals[0] is not None:
-            hdr_cols = st.columns(_col_ratios)
+            hdr_cols = st.columns(_col_ratios, gap="large")
             hdr_cols[0].write("")  # empty corner above row labels
             for _ci, _sv in enumerate(_sec_vals):
                 hdr_cols[_ci + 1].markdown(
-                    f"<div style='text-align:center; font-weight:600; font-size:0.88rem;"
-                    f"padding:4px 0;'>{_sv}</div>",
+                    f"<div style='text-align:center; font-weight:600; font-size:0.88rem; "
+                    f"padding:4px 8px; word-break:break-word;'>{_sv}</div>",
                     unsafe_allow_html=True,
                 )
 
         # Data rows — one Streamlit row per facet value
         for _ri, _fv in enumerate(_facet_vals):
-            row_cols = st.columns(_col_ratios)
+            row_cols = st.columns(_col_ratios, gap="large")
 
             # Vertical row label
             row_cols[0].markdown(
                 f"<div style='writing-mode:vertical-rl; transform:rotate(180deg); "
                 f"text-align:center; font-size:0.82rem; font-weight:600; "
-                f"min-height:140px; display:flex; align-items:center; "
-                f"justify-content:center;'>{_fv}</div>",
+                f"min-height:150px; display:flex; align-items:center; "
+                f"justify-content:center; padding:4px 0;'>{_fv}</div>",
                 unsafe_allow_html=True,
             )
 
@@ -2556,11 +2569,14 @@ def main():
                     showlegend=False,
                 ))
                 _mini.update_layout(
-                    margin=dict(l=2, r=2, t=2, b=2),
-                    height=150,
+                    margin=dict(l=4, r=4, t=4, b=4),
+                    height=160,
                     showlegend=False,
                 )
                 row_cols[_ci + 1].plotly_chart(_mini, use_container_width=True)
+
+            # Small vertical spacer between data rows
+            st.markdown("<div style='margin-bottom:8px;'></div>", unsafe_allow_html=True)
 
         # Sample size warnings
         if checks and checks["warnings"]:
