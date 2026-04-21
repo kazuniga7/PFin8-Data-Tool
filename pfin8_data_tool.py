@@ -2506,39 +2506,69 @@ def main():
 
         n_pie_cols = len(_sec_vals) if _sec_vals[0] is not None else 1
 
-        # Title
-        st.markdown(f"**{_title}**")
-
-        # Shared HTML color legend — one swatch per slice category
-        _legend_items = "".join(
-            f"<span style='display:inline-flex; align-items:center; margin-right:18px; font-size:0.83rem;'>"
-            f"<span style='display:inline-block; width:12px; height:12px; background:{_cmap[_lbl]}; "
-            f"border-radius:2px; margin-right:5px; flex-shrink:0;'></span>{_lbl}</span>"
-            for _lbl in _cmap
-        )
+        # CSV download (mirrors the export bar on other chart types)
+        import base64, io
+        _csv_bytes = _cdata.to_csv(index=False).encode()
+        _csv_b64 = base64.b64encode(_csv_bytes).decode()
         st.markdown(
-            f"<div style='padding:6px 0 10px 0; line-height:1.8;'>{_legend_items}</div>",
+            f'<div style="text-align:right; font-size:0.9rem; padding:8px 0;">'
+            f'Download: '
+            f'<a href="data:text/csv;base64,{_csv_b64}" download="pfin8_chart.csv" '
+            f'style="color:#1f77b4; text-decoration:underline;">CSV</a>'
+            f'</div>',
             unsafe_allow_html=True,
         )
 
+        # Title
+        st.markdown(f"**{_title}**")
+
+        # Plotly-style shared legend — invisible scatter traces, horizontal orientation
+        _legend_fig = go.Figure()
+        for _lbl, _col in _cmap.items():
+            _legend_fig.add_trace(go.Scatter(
+                x=[None], y=[None],
+                mode="markers",
+                marker=dict(size=10, color=_col, symbol="square"),
+                name=_lbl,
+                showlegend=True,
+            ))
+        _legend_n_rows = max(1, -(-len(_cmap) // 4))  # ceil(n/4) rows
+        _legend_fig.update_layout(
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                font=dict(color="black", size=12),
+                yanchor="middle",
+                y=0.5,
+                xanchor="left",
+                x=0,
+            ),
+            margin=dict(l=0, r=0, t=0, b=0),
+            height=max(30, 28 * _legend_n_rows),
+            xaxis=dict(visible=False, fixedrange=True),
+            yaxis=dict(visible=False, fixedrange=True),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(_legend_fig, use_container_width=True)
+
         # Column-width ratios: narrow left label column + equal pie columns
-        # Use gap="large" so long column headers don't run into each other
         _col_ratios = [1] + [max(3, 24 // n_pie_cols)] * n_pie_cols
 
-        # Column header row
+        # Column header row (no gap= so pie columns keep full width)
         if _sec_vals[0] is not None:
-            hdr_cols = st.columns(_col_ratios, gap="large")
+            hdr_cols = st.columns(_col_ratios)
             hdr_cols[0].write("")  # empty corner above row labels
             for _ci, _sv in enumerate(_sec_vals):
                 hdr_cols[_ci + 1].markdown(
-                    f"<div style='text-align:center; font-weight:600; font-size:0.88rem; "
-                    f"padding:4px 8px; word-break:break-word;'>{_sv}</div>",
+                    f"<div style='text-align:center; font-weight:600; font-size:0.82rem; "
+                    f"padding:2px 4px; overflow-wrap:break-word; word-break:break-word;'>{_sv}</div>",
                     unsafe_allow_html=True,
                 )
 
         # Data rows — one Streamlit row per facet value
         for _ri, _fv in enumerate(_facet_vals):
-            row_cols = st.columns(_col_ratios, gap="large")
+            row_cols = st.columns(_col_ratios)
 
             # Vertical row label
             row_cols[0].markdown(
@@ -2569,14 +2599,14 @@ def main():
                     showlegend=False,
                 ))
                 _mini.update_layout(
-                    margin=dict(l=4, r=4, t=4, b=4),
+                    margin=dict(l=2, r=2, t=2, b=2),
                     height=160,
                     showlegend=False,
                 )
                 row_cols[_ci + 1].plotly_chart(_mini, use_container_width=True)
 
-            # Small vertical spacer between data rows
-            st.markdown("<div style='margin-bottom:8px;'></div>", unsafe_allow_html=True)
+            # Spacer between data rows
+            st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
 
         # Sample size warnings
         if checks and checks["warnings"]:
