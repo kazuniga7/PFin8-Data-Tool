@@ -1127,7 +1127,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 age_mode = None
                 if analysis_variable == "Age":
                     age_mode = st.selectbox(
-                        "Set Age Ranges",
+                        "Set Age Ranges . . .",
                         ["Predefined", "Custom"],
                     )
                     if age_mode == "Predefined":
@@ -1136,7 +1136,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         if age_order:
                             available_age_values = [v for v in age_order if v in available_age_values]
                         subgroups = st.multiselect(
-                            "Select Age Groups",
+                            "Select Ranges",
                             available_age_values,
                             default=available_age_values,
                         )
