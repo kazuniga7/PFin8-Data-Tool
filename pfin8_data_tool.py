@@ -76,8 +76,8 @@ FINANCIAL_WELLBEING_VARIABLES = {
     "Debt Constraint": "debt_constrained_responses",
     "Financial Fragility": "is_Financially_Fragile",
     "Non-Retirement Savings (One Month)": "suffretirement_savings_responses",
-    "Time Thinking About Finances (Overall)": "time_thinking_finances",
-    "Time Thinking About Finances (At Work)": "worktime_thinking_finances",
+    "Time Spent Thinking About Finances (Overall)": "time_thinking_finances",
+    "Time Spent Thinking About Finances (At Work)": "worktime_thinking_finances",
 }
 
 FINANCIAL_WELLBEING_LABELS = {
