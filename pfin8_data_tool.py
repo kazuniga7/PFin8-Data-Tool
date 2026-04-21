@@ -2399,7 +2399,7 @@ def main():
         title_col, dl_col = st.columns([7, 3])
         with title_col:
             st.markdown(f"### {chart_title}")
-            st.markdown('<div style="font-size:0.8rem;color:gray;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:0.8rem;color:gray;font-weight:600;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
         with dl_col:
             # All tables use client-side PNG via html2canvas + CSV + Excel
             import streamlit.components.v1 as components, re as _re_tbl_note
@@ -2530,7 +2530,7 @@ def main():
         # consistent regardless of figure height:
         #   column headers: 30 px above the plot area
         #   figure title:  100 px above the plot area (always above headers)
-        _exp_h = max(400, n_pie_rows * 200 + 160)
+        _exp_h = max(400, n_pie_rows * 160 + 160)
         _plot_h_px = max(1, _exp_h - 180)  # t=160 + b=20
         _col_hdr_y = 1.0 + 30.0 / _plot_h_px
         _title_y   = 1.0 + 100.0 / _plot_h_px
@@ -2608,7 +2608,7 @@ def main():
         _png_ok = False
         _exp_fig_h = _exp_fig.layout.height or _exp_h  # may have grown to fit note
         try:
-            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_fig_h, scale=2)
+            _png_bytes = _exp_fig.to_image(format="png", width=2000, height=_exp_fig_h, scale=1)
             _png_ok = True
         except Exception:
             pass
@@ -2688,7 +2688,7 @@ def main():
         # Grid (title + column headers + data rows) in left column
         with _grid_col:
             st.markdown(f"**{_title}**")
-            st.markdown('<div style="font-size:0.8rem;color:gray;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:0.8rem;color:gray;font-weight:600;margin-top:-0.5rem;">Source: TIAA G-FLEC Personal Finance Index</div>', unsafe_allow_html=True)
 
             # Column header row
             if _sec_vals[0] is not None:
@@ -2731,7 +2731,7 @@ def main():
                     ))
                     _mini.update_layout(
                         margin=dict(l=5, r=15, t=5, b=5),
-                        height=160,
+                        height=180,
                         showlegend=False,
                     )
                     _rc[_ci + 1].plotly_chart(_mini, use_container_width=True, config={"displayModeBar": False})
