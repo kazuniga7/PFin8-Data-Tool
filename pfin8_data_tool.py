@@ -1496,7 +1496,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         key='pfin8_aa_legend',
                     )
                     axis_facet = [d for d in _opts if d != axis_x and d != axis_legend][0]
-                    st.caption(f"Facet (panels): **{axis_facet}**")
+                    st.markdown(f"<span style='color:black;font-size:0.875rem'>Facet (panels): <strong>{axis_facet}</strong></span>", unsafe_allow_html=True)
                 else:
                     axis_x = st.selectbox(
                         "X-Axis", _opts,
@@ -1504,7 +1504,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                         key='pfin8_aa_x',
                     )
                     axis_legend = [d for d in _opts if d != axis_x][0]
-                    st.markdown(f"<span style='color:black;font-size:0.85rem'>Legend: <strong>{axis_legend}</strong></span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:black;font-size:0.875rem'>Legend: <strong>{axis_legend}</strong></span>", unsafe_allow_html=True)
 
         # Section 6: Chart Type + Show percentages toggle
         with st.expander("Chart Type", expanded=True):
