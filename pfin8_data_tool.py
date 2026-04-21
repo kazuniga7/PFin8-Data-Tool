@@ -144,8 +144,8 @@ def load_genpop():
     # Map binary display for has_dependent_children and took_Financial_Education
     df["has_dependent_children_display"] = df["has_dependent_children"].map(BINARY_DISPLAY)
     df["took_Financial_Education_display"] = df["took_Financial_Education"].map(BINARY_DISPLAY)
-    # Map savings display
-    df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].map(SAVINGS_DISPLAY)
+    # Map savings display (use replace to handle float/int type coercion from Excel)
+    df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].replace(SAVINGS_DISPLAY)
     return df
 
 
@@ -1598,7 +1598,7 @@ def run_analysis(config, df_years, df_genpop):
             if config["subgroups"]:
                 df = df[df[group_col].isin(config["subgroups"])]
         elif analysis_col == "suffretirement_savings_responses":
-            df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].map(SAVINGS_DISPLAY)
+            df["suffretirement_savings_display"] = df["suffretirement_savings_responses"].replace(SAVINGS_DISPLAY)
             group_col = "suffretirement_savings_display"
             group_label = FINANCIAL_WELLBEING_LABELS.get("suffretirement_savings_responses", config["analysis_variable"])
             analysis_col = "suffretirement_savings_display"
