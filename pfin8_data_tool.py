@@ -1481,7 +1481,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
         # Section 5: Axis Assignment
         if axis_assignment_shown and _aa_info:
-            with st.expander("Axis Assignment", expanded=True):
+            with st.expander("Set Horizontal Axis . . .", expanded=True):
                 _opts = _aa_info['options']
                 if _aa_info['type'] == 'three_way':
                     axis_x = st.selectbox(
