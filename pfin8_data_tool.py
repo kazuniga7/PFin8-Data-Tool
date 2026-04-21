@@ -1986,16 +1986,25 @@ def run_analysis(config, df_years, df_genpop):
             _fw_short_label = "Number of Hours" if config.get("analysis_col") in _time_fw_vars else "Response"
             fig.update_xaxes(title_text="")
             fig.update_xaxes(title_text=_fw_short_label, row=1)
+            # Position the annotation based on max tick label length —
+            # long labels angle steeply and need more clearance below.
+            _max_tick_len = max((len(str(v)) for v in chart_data["x"].unique()), default=5)
+            if _max_tick_len > 15:
+                _ann_y, _margin_b = -0.28, 180
+            elif _max_tick_len > 10:
+                _ann_y, _margin_b = -0.18, 130
+            else:
+                _ann_y, _margin_b = -0.12, 100
             fig.add_annotation(
                 text=_fw_question,
                 xref="paper", yref="paper",
-                x=0.5, y=-0.28,
+                x=0.5, y=_ann_y,
                 showarrow=False,
                 font=dict(size=12, color="black"),
                 xanchor="center",
                 yanchor="top",
             )
-            fig.update_layout(margin=dict(b=180))
+            fig.update_layout(margin=dict(b=_margin_b))
 
     # Generate note
     note = generate_note(
