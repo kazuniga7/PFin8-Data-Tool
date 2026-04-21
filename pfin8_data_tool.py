@@ -2551,17 +2551,23 @@ def main():
                     ),
                     row=_ri + 1, col=_ci + 1,
                 )
-        # Column header + row label annotations (fine at fixed export size)
-        # Column headers sit at y=1.06 (just above the plot area).
-        # The figure title is pushed to y=1.12 via title.y so there is clear
-        # vertical separation between the title and the column headers.
+        # Column header + row label annotations.
+        # Use pixel-based offsets converted to paper coords so spacing is
+        # consistent regardless of figure height:
+        #   column headers: 30 px above the plot area
+        #   figure title:  100 px above the plot area (always above headers)
+        _exp_h = max(400, n_pie_rows * 200 + 160)
+        _plot_h_px = max(1, _exp_h - 180)  # t=160 + b=20
+        _col_hdr_y = 1.0 + 30.0 / _plot_h_px
+        _title_y   = 1.0 + 100.0 / _plot_h_px
+
         _ecw = (1.0 - (n_pie_cols - 1) * _eh) / n_pie_cols
         if _sec_vals[0] is not None:
             for _ci, _sv in enumerate(_sec_vals):
                 _cx = _ci * (_ecw + _eh) + _ecw / 2
                 _exp_fig.add_annotation(
                     text=str(_sv), xref="paper", yref="paper",
-                    x=_cx, y=1.06, showarrow=False,
+                    x=_cx, y=_col_hdr_y, showarrow=False,
                     font=dict(size=11, color="black"),
                     xanchor="center", yanchor="bottom",
                 )
@@ -2574,9 +2580,15 @@ def main():
                 font=dict(size=10, color="black"),
                 xanchor="center", yanchor="middle", textangle=-90,
             )
-        _exp_h = max(400, n_pie_rows * 200 + 160)
         _exp_fig.update_layout(
-            title_text=_title,
+            title=dict(
+                text=_title,
+                y=_title_y,
+                yref="paper",
+                yanchor="bottom",
+                x=0.5,
+                xanchor="center",
+            ),
             margin=dict(l=80, t=160, r=160, b=20),
             height=_exp_h,
             legend=dict(
