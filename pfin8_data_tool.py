@@ -1991,7 +1991,7 @@ def run_analysis(config, df_years, df_genpop):
             _max_tick_len = max((len(str(v)) for v in chart_data["x"].unique()), default=5)
             if _max_tick_len > 15:
                 _ann_y, _margin_b = -0.28, 180
-            elif _max_tick_len > 10:
+            elif _max_tick_len > 12:
                 _ann_y, _margin_b = -0.18, 130
             else:
                 _ann_y, _margin_b = -0.12, 100
