@@ -2406,17 +2406,18 @@ def main():
                     height=max(400, 80 + n_rows * 35),
                     margin=dict(l=10, r=10, t=50, b=10),
                 )
-            if note:
-                import re as _re_note3
-                _note_plain3 = _re_note3.sub(r'\*\*(.+?)\*\*', r'\1', note)
-                table_fig.add_annotation(
-                    text=_note_plain3, xref="paper", yref="paper",
-                    x=0, y=-0.12, showarrow=False,
-                    font=dict(size=9, color="gray"),
-                    xanchor="left", yanchor="top",
-                )
-                _tb = table_fig.layout.margin.b or 10
-                table_fig.update_layout(margin=dict(b=_tb + 60))
+                if note:
+                    import re as _re_note3, textwrap as _tw3
+                    _note_plain3 = _re_note3.sub(r'\*\*(.+?)\*\*', r'\1', note)
+                    _note_lines3 = _tw3.wrap(_note_plain3, 120)
+                    table_fig.add_annotation(
+                        text="<br>".join(_note_lines3), xref="paper", yref="paper",
+                        x=0, y=-0.12, showarrow=False,
+                        font=dict(size=9, color="gray"),
+                        xanchor="left", yanchor="top",
+                    )
+                    _tb = table_fig.layout.margin.b or 10
+                    table_fig.update_layout(margin=dict(b=_tb + 16 * len(_note_lines3) + 20))
             table_png_bytes = table_fig.to_image(format="png", scale=2)
             table_png_b64 = base64.b64encode(table_png_bytes).decode()
             table_png_available = True
@@ -2430,7 +2431,12 @@ def main():
         with dl_col:
             if facet_groups and table_html_inner:
                 # Facet tables: client-side PNG via html2canvas + CSV + Excel
-                import streamlit.components.v1 as components
+                import streamlit.components.v1 as components, re as _re_tbl_note
+                if note:
+                    _tbl_note_plain = _re_tbl_note.sub(r'\*\*(.+?)\*\*', r'\1', note)
+                    _tbl_note_html = '<p style="font-size:11px;color:gray;margin-top:10px;">' + _tbl_note_plain + '</p>'
+                else:
+                    _tbl_note_html = ""
                 component_html = (
                     '<!DOCTYPE html><html><head>'
                     '<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>'
@@ -2443,7 +2449,7 @@ def main():
                     '.dl-bar { text-align: right; padding: 8px 0; font-size: 0.875rem; white-space: nowrap; }'
                     'a { color: #1f77b4; text-decoration: underline; cursor: pointer; }'
                     '</style></head><body>'
-                    f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}</div>'
+                    f'<div id="capture"><h3>{chart_title}</h3>{table_html_inner}{_tbl_note_html}</div>'
                     '<div class="dl-bar">Download: '
                     '<a id="png-btn" href="#">PNG</a> | '
                     f'<a href="data:text/csv;base64,{csv_b64}" download="pfin8_table.csv">CSV</a> | '
@@ -2633,17 +2639,18 @@ def main():
         )
 
         # Add note annotation to export figure (PNG) and prepare note div (HTML)
-        import re as _re_note4
+        import re as _re_note4, textwrap as _tw4
         _note_plain4 = _re_note4.sub(r'\*\*(.+?)\*\*', r'\1', note) if note else ""
-        _note_html4 = _re_note4.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
+        _note_html4  = _re_note4.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
         if note:
+            _note_lines4 = _tw4.wrap(_note_plain4, 130)
             _exp_fig.add_annotation(
-                text=_note_plain4, xref="paper", yref="paper",
+                text="<br>".join(_note_lines4), xref="paper", yref="paper",
                 x=0, y=-0.03, showarrow=False,
                 font=dict(size=10, color="gray"),
                 xanchor="left", yanchor="top",
             )
-            _exp_fig.update_layout(margin=dict(b=80))
+            _exp_fig.update_layout(margin=dict(b=16 * len(_note_lines4) + 40))
 
         # PNG + HTML download bar
         _png_ok = False
@@ -2788,7 +2795,8 @@ def main():
         render_debug_panel(checks)
 
     elif fig:
-        import base64, re as _re_note5
+        import base64, re as _re_note5, textwrap as _tw5
+        import plotly.graph_objects as go
         _note_plain5 = _re_note5.sub(r'\*\*(.+?)\*\*', r'\1', note) if note else ""
         _note_html5  = _re_note5.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', note) if note else ""
 
@@ -2799,14 +2807,15 @@ def main():
         try:
             _efig = go.Figure(fig)
             if note:
+                _note_lines5 = _tw5.wrap(_note_plain5, 130)
                 _efig.add_annotation(
-                    text=_note_plain5, xref="paper", yref="paper",
+                    text="<br>".join(_note_lines5), xref="paper", yref="paper",
                     x=0, y=-0.15, showarrow=False,
                     font=dict(size=10, color="gray"),
                     xanchor="left", yanchor="top",
                 )
                 _cur_b = _efig.layout.margin.b or 50
-                _efig.update_layout(margin=dict(b=_cur_b + 70))
+                _efig.update_layout(margin=dict(b=_cur_b + 16 * len(_note_lines5) + 30))
             _efig_h = _efig.layout.height or 600
             png_bytes = _efig.to_image(format="png", width=2000, height=_efig_h, scale=2)
             png_available = True
