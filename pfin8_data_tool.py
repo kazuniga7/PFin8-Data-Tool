@@ -1928,7 +1928,7 @@ def run_analysis(config, df_years, df_genpop):
             _n_facets = chart_data[use_facet].nunique()
             _n_rows = _math.ceil(_n_facets / 4)
             fig.update_xaxes(title_text="")
-            fig.update_xaxes(title_text="Response", row=_n_rows)
+            fig.update_xaxes(title_text="Response", row=1)
             fig.add_annotation(
                 text=_fw_question,
                 xref="paper", yref="paper",
