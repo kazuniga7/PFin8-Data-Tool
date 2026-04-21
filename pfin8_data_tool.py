@@ -1001,9 +1001,12 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     if _dist_errors:
                         st.error("Invalid ranges — please adjust")
                     _dist_labels = []
+                    _label_prev_pct_end = -1
                     for _i, (_s, _e) in enumerate(_dist_groups):
-                        _pct_s = round(_s / 8 * 100)
+                        _adjacent_lbl = _i > 0 and _dist_groups[_i - 1][1] + 1 == _s
+                        _pct_s = _label_prev_pct_end + 1 if _adjacent_lbl else round(_s / 8 * 100)
                         _pct_e = round(_e / 8 * 100)
+                        _label_prev_pct_end = _pct_e
                         if _s == _e:
                             _dist_labels.append(f"{_s} ({_pct_s}%)")
                         elif _i == len(_dist_groups) - 1 and _e == 8:
