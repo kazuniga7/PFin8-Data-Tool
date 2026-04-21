@@ -1255,6 +1255,8 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 analysis_col = FINANCIAL_WELLBEING_VARIABLES[analysis_variable]
                 _display_col = "suffretirement_savings_display" if analysis_col == "suffretirement_savings_responses" else analysis_col
                 available_values = df_genpop[_display_col].dropna().unique().tolist()
+                if analysis_variable == "Financial Fragility":
+                    available_values = [str(v).title() for v in available_values]
                 order = get_category_order(_display_col)
                 if order:
                     available_values = [v for v in order if v in available_values]
@@ -1263,7 +1265,13 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 if analysis_variable == "Has Sufficient Non-Retirement Savings":
                     st.caption("*Note: Sufficient savings means enough to cover 1 month of expenses.")
                 _time_vars = {"Time Spent Thinking About Finances (Overall)", "Time Spent Thinking About Finances (At Work)"}
-                _subgroup_label = "Select Number of Hours" if analysis_variable in _time_vars else "Select Response Categories"
+                _labeled_vars = {"Financial Fragility", "Debt Constraint"}
+                if analysis_variable in _time_vars:
+                    _subgroup_label = "Select Number of Hours"
+                elif analysis_variable in _labeled_vars:
+                    _subgroup_label = f"Select {analysis_variable} Categories"
+                else:
+                    _subgroup_label = "Select Response Categories"
                 subgroups = st.multiselect(
                     _subgroup_label,
                     available_values,
@@ -1606,6 +1614,13 @@ def run_analysis(config, df_years, df_genpop):
             group_col = "suffretirement_savings_display"
             group_label = FINANCIAL_WELLBEING_LABELS.get("suffretirement_savings_responses", config["analysis_variable"])
             analysis_col = "suffretirement_savings_display"
+            if config["subgroups"]:
+                df = df[df[group_col].isin(config["subgroups"])]
+        elif analysis_col == "is_Financially_Fragile":
+            df["is_Financially_Fragile_display"] = df["is_Financially_Fragile"].astype(str).str.title()
+            group_col = "is_Financially_Fragile_display"
+            group_label = FINANCIAL_WELLBEING_LABELS.get("is_Financially_Fragile", config["analysis_variable"])
+            analysis_col = "is_Financially_Fragile_display"
             if config["subgroups"]:
                 df = df[df[group_col].isin(config["subgroups"])]
         else:
