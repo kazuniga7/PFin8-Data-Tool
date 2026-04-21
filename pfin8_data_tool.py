@@ -2669,7 +2669,7 @@ def main():
                         showlegend=False,
                     ))
                     _mini.update_layout(
-                        margin=dict(l=2, r=2, t=2, b=2),
+                        margin=dict(l=5, r=15, t=5, b=5),
                         height=160,
                         showlegend=False,
                     )
