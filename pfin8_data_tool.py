@@ -46,8 +46,7 @@ TOPIC_CAT3_NAMES = {
 }
 
 DEMOGRAPHIC_VARIABLES = {
-    "Age (Buckets)": "age_category",
-    "Age (Custom Range)": "reported_age",
+    "Age": "age_category",
     "Generation": "generation_category",
     "Gender": "gender",
     "Race/Ethnicity": "race_ethnicity_category",
@@ -1125,81 +1124,99 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 )
                 analysis_col = DEMOGRAPHIC_VARIABLES[analysis_variable]
 
-                if analysis_variable == "Age (Custom Range)":
-                    min_age = int(df_genpop["reported_age"].min())
-                    max_age = int(df_genpop["reported_age"].max())
-
-                    num_groups = st.selectbox(
-                        "Number of age groups",
-                        [1, 2, 3, 4, 5, 6, 7, 8],
-                        index=2,
+                age_mode = None
+                if analysis_variable == "Age":
+                    age_mode = st.selectbox(
+                        "Age Range Type",
+                        ["Predefined", "Custom"],
                     )
+                    if age_mode == "Predefined":
+                        available_age_values = sorted(df_genpop["age_category"].dropna().unique().tolist())
+                        age_order = get_category_order("age_category")
+                        if age_order:
+                            available_age_values = [v for v in age_order if v in available_age_values]
+                        subgroups = st.multiselect(
+                            "Select Age Groups",
+                            available_age_values,
+                            default=available_age_values,
+                        )
+                    else:  # Custom
+                        analysis_col = "reported_age"
+                        min_age = int(df_genpop["reported_age"].min())
+                        max_age = int(df_genpop["reported_age"].max())
 
-                    st.markdown("**Define your age groups**")
-                    st.caption(f"Min age: {min_age} · Max age: {max_age}")
-                    custom_age_groups = []
-                    age_errors = []
+                        num_groups = st.selectbox(
+                            "Number of age groups",
+                            [1, 2, 3, 4, 5, 6, 7, 8],
+                            index=2,
+                        )
 
-                    for i in range(num_groups):
-                        st.markdown(f"**Age Group {i+1}:**")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            start = st.number_input(
-                                "Start",
-                                min_value=min_age, max_value=max_age,
-                                value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
-                                key=f"age_start_{i}",
-                            )
-                        with col2:
-                            default_end = min(min_age + (i + 1) * ((max_age - min_age) // num_groups) - 1, max_age)
-                            if i == num_groups - 1:
-                                default_end = max_age
-                            end = st.number_input(
-                                "End",
-                                min_value=min_age, max_value=max_age,
-                                value=default_end,
-                                key=f"age_end_{i}",
-                            )
+                        st.markdown("**Define your age groups**")
+                        st.caption(f"Min age: {min_age} · Max age: {max_age}")
+                        custom_age_groups = []
+                        age_errors = []
 
-                        # Validate: end must be > start
-                        if end < start:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
-                            age_errors.append(f"Age Group {i+1}: end < start")
-                        elif end == start:
-                            st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: start age must be less than end age and end age must be greater than start age</p>', unsafe_allow_html=True)
-                            age_errors.append(f"Age Group {i+1}: start == end")
+                        for i in range(num_groups):
+                            st.markdown(f"**Age Group {i+1}:**")
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                start = st.number_input(
+                                    "Start",
+                                    min_value=min_age, max_value=max_age,
+                                    value=min(min_age + i * ((max_age - min_age) // num_groups), max_age),
+                                    key=f"age_start_{i}",
+                                )
+                            with col2:
+                                default_end = min(min_age + (i + 1) * ((max_age - min_age) // num_groups) - 1, max_age)
+                                if i == num_groups - 1:
+                                    default_end = max_age
+                                end = st.number_input(
+                                    "End",
+                                    min_value=min_age, max_value=max_age,
+                                    value=default_end,
+                                    key=f"age_end_{i}",
+                                )
 
-                        custom_age_groups.append((start, end))
+                            # Validate: end must be > start
+                            if end < start:
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: end age must be ≥ start age</p>', unsafe_allow_html=True)
+                                age_errors.append(f"Age Group {i+1}: end < start")
+                            elif end == start:
+                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Age Group {i+1}: start age must be less than end age and end age must be greater than start age</p>', unsafe_allow_html=True)
+                                age_errors.append(f"Age Group {i+1}: start == end")
 
-                    # Validate: check for overlaps
-                    for i in range(len(custom_age_groups)):
-                        for j in range(i + 1, len(custom_age_groups)):
-                            g1_start, g1_end = custom_age_groups[i]
-                            g2_start, g2_end = custom_age_groups[j]
-                            if g1_start <= g2_end and g2_start <= g1_end:
-                                overlap_start = max(g1_start, g2_start)
-                                overlap_end = min(g1_end, g2_end)
-                                st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Age Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
-                                age_errors.append(f"Age Groups {i+1} and {j+1} overlap")
+                            custom_age_groups.append((start, end))
 
-                    if age_errors:
-                        st.error("Invalid groups — please adjust ranges")
+                        # Validate: check for overlaps
+                        for i in range(len(custom_age_groups)):
+                            for j in range(i + 1, len(custom_age_groups)):
+                                g1_start, g1_end = custom_age_groups[i]
+                                g2_start, g2_end = custom_age_groups[j]
+                                if g1_start <= g2_end and g2_start <= g1_end:
+                                    overlap_start = max(g1_start, g2_start)
+                                    overlap_end = min(g1_end, g2_end)
+                                    st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: 0 0 5px 0;">⚠️ Age Groups {i+1} and {j+1} overlap (ages {overlap_start}–{overlap_end})</p>', unsafe_allow_html=True)
+                                    age_errors.append(f"Age Groups {i+1} and {j+1} overlap")
 
-                    # Build labels
-                    custom_age_labels = []
-                    for i, (s, e) in enumerate(custom_age_groups):
-                        if i == len(custom_age_groups) - 1 and e == max_age:
-                            custom_age_labels.append(f"{s}+")
-                        elif s == e:
-                            custom_age_labels.append(f"{s}")
-                        else:
-                            custom_age_labels.append(f"{s}-{e}")
+                        if age_errors:
+                            st.error("Invalid groups — please adjust ranges")
 
-                    custom_age_range = {
-                        "groups": custom_age_groups,
-                        "labels": custom_age_labels,
-                        "errors": age_errors,
-                    }
+                        # Build labels
+                        custom_age_labels = []
+                        for i, (s, e) in enumerate(custom_age_groups):
+                            if i == len(custom_age_groups) - 1 and e == max_age:
+                                custom_age_labels.append(f"{s}+")
+                            elif s == e:
+                                custom_age_labels.append(f"{s}")
+                            else:
+                                custom_age_labels.append(f"{s}-{e}")
+
+                        custom_age_range = {
+                            "groups": custom_age_groups,
+                            "labels": custom_age_labels,
+                            "errors": age_errors,
+                        }
+
                 elif analysis_variable == "Dependent Children Under 18":
                     subgroups = st.multiselect(
                         "Select Groups",
@@ -1269,7 +1286,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         # Count group dimension values
         if environment == "Survey Years":
             n_group = len(selected_years) if selected_years else 10
-        elif analysis_variable == "Age (Custom Range)" and custom_age_range:
+        elif analysis_variable == "Age" and age_mode == "Custom" and custom_age_range:
             n_group = len(custom_age_range.get("groups", []))
         elif subgroups:
             n_group = len(subgroups)
@@ -1492,6 +1509,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             "subgroups": subgroups,
             "selected_years": selected_years,
             "custom_age_range": custom_age_range,
+            "age_mode": age_mode,
             "chart_type": chart_type,
             "axis_x": axis_x,
             "axis_legend": axis_legend,
@@ -1534,7 +1552,7 @@ def run_analysis(config, df_years, df_genpop):
         analysis_col = config["analysis_col"]
         dataset_name = "PFin2026_GenPop (2026)"
 
-        if config["analysis_variable"] == "Age (Custom Range)":
+        if config["analysis_variable"] == "Age" and config.get("age_mode") == "Custom":
             age_config = config["custom_age_range"]
             if age_config and age_config.get("errors"):
                 st.error("Invalid groups — please adjust ranges")
