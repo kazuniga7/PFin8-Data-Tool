@@ -1285,6 +1285,11 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                             elif end == start:
                                 st.markdown(f'<p style="color: red; font-size: 0.85rem; margin: -10px 0 5px 0;">⚠️ Range {i+1}: start age must be less than end age and end age must be greater than start age</p>', unsafe_allow_html=True)
                                 age_errors.append(f"Range {i+1}: start == end")
+                            else:
+                                _n_range = int(
+                                    ((df_genpop["reported_age"] >= start) & (df_genpop["reported_age"] <= end)).sum()
+                                )
+                                st.caption(f"n = {_n_range:,}")
 
                             custom_age_groups.append((start, end))
 
