@@ -2507,6 +2507,16 @@ def main():
         n_pie_cols = len(_sec_vals) if _sec_vals[0] is not None else 1
         n_pie_rows = len(_facet_vals)
 
+        # Legend title — derived here so it can be used by both export and display
+        _slice_label_map = {
+            "response_category": "Response Category",
+            "topic": "Topic",
+            "score_label": "P-Fin 8 Score (# Correct)",
+            "range_label": "Question Count Range",
+            "group_value": "Group",
+        }
+        _legend_title = _slice_label_map.get(_slice_col, _slice_col.replace("_", " ").title())
+
         # ── Export figure (make_subplots rendered by kaleido at fixed px — no
         #    responsive-mode issues, so annotations at y>1 work fine here) ──────
         from plotly.subplots import make_subplots as _make_subplots
@@ -2542,13 +2552,16 @@ def main():
                     row=_ri + 1, col=_ci + 1,
                 )
         # Column header + row label annotations (fine at fixed export size)
-        _ecw = (1.0 - (_n_ec := n_pie_cols - 1) * _eh) / n_pie_cols
+        # Column headers sit at y=1.06 (just above the plot area).
+        # The figure title is pushed to y=1.12 via title.y so there is clear
+        # vertical separation between the title and the column headers.
+        _ecw = (1.0 - (n_pie_cols - 1) * _eh) / n_pie_cols
         if _sec_vals[0] is not None:
             for _ci, _sv in enumerate(_sec_vals):
                 _cx = _ci * (_ecw + _eh) + _ecw / 2
                 _exp_fig.add_annotation(
                     text=str(_sv), xref="paper", yref="paper",
-                    x=_cx, y=1.04, showarrow=False,
+                    x=_cx, y=1.06, showarrow=False,
                     font=dict(size=11, color="black"),
                     xanchor="center", yanchor="bottom",
                 )
@@ -2561,12 +2574,15 @@ def main():
                 font=dict(size=10, color="black"),
                 xanchor="center", yanchor="middle", textangle=-90,
             )
-        _exp_h = max(400, n_pie_rows * 200 + 120)
+        _exp_h = max(400, n_pie_rows * 200 + 160)
         _exp_fig.update_layout(
-            title_text=_title,
-            margin=dict(l=80, t=100, r=160, b=20),
+            title=dict(text=_title, y=0.99, yanchor="top", yref="paper"),
+            margin=dict(l=80, t=160, r=160, b=20),
             height=_exp_h,
-            legend=dict(font=dict(color="black")),
+            legend=dict(
+                font=dict(color="black"),
+                title=dict(text=_legend_title, font=dict(color="black")),
+            ),
         )
 
         # PNG + HTML download bar
@@ -2599,15 +2615,6 @@ def main():
         _grid_col, _leg_col = st.columns([6, 1])
 
         # Vertical legend in right column — matches Plotly's default right-side legend
-        _slice_label_map = {
-            "response_category": "Response Category",
-            "topic": "Topic",
-            "score_label": "P-Fin 8 Score (# Correct)",
-            "range_label": "Question Count Range",
-            "group_value": "Group",
-        }
-        _legend_title = _slice_label_map.get(_slice_col, _slice_col.replace("_", " ").title())
-
         with _leg_col:
             _lf = go.Figure()
             for _lbl, _lc in _cmap.items():
