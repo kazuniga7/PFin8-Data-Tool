@@ -705,7 +705,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
     parts = []
     parts.append("**Data Source:** TIAA G-FLEC Personal Finance Index")
 
-    if environment == "Over the Years":
+    if environment == "Survey Years":
         yr_text = ", ".join(str(y) for y in sorted(year_range)) if year_range else "2017–2026"
         parts.append(f"**Years:** {yr_text}")
     else:
@@ -728,7 +728,7 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         range_text = ", ".join(TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range)) if selected_range else "0–8"
         parts.append(f"**P-Fin 8 Score (# Correct) Range:** {range_text}")
 
-    if environment != "Over the Years" and analysis_variable:
+    if environment != "Survey Years" and analysis_variable:
         parts.append(f"**Analysis Variable:** {analysis_variable}")
         if subgroups:
             parts.append(f"**Subgroups:** {', '.join(str(s) for s in subgroups)}")
@@ -1071,7 +1071,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander("Explore across . . .", expanded=True):
             environment = st.radio(
                 "Explore across . . .",
-                ["Over the Years", "Demographics", "Financial Well-Being"],
+                ["Survey Years", "Demographics", "Financial Well-Being"],
                 help="Choose how you want to explore the P-Fin 8 data",
                 label_visibility="collapsed",
             )
@@ -1083,7 +1083,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         selected_years = None
         custom_age_range = None
 
-        if environment == "Over the Years":
+        if environment == "Survey Years":
             _sec4_title = "Years"
         elif environment == "Demographics":
             _sec4_title = "Demographic Variable"
@@ -1091,7 +1091,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             _sec4_title = "Financial Well-Being Variable"
 
         with st.expander(_sec4_title, expanded=True):
-            if environment == "Over the Years":
+            if environment == "Survey Years":
                 _all_years = sorted([int(y) for y in df_years["survey_year"].unique()])
                 # Initialize checkboxes to True on first load
                 for _y in _all_years:
@@ -1244,7 +1244,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
 
         # Axis assignment
         # Determine the group dimension label
-        if environment == "Over the Years":
+        if environment == "Survey Years":
             group_dim_label = "Year"
         elif environment == "Demographics":
             group_dim_label = analysis_variable if analysis_variable else "Demographic"
@@ -1267,7 +1267,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 n_dist_ranges = 1
 
         # Count group dimension values
-        if environment == "Over the Years":
+        if environment == "Survey Years":
             n_group = len(selected_years) if selected_years else 10
         elif analysis_variable == "Age (Custom Range)" and custom_age_range:
             n_group = len(custom_age_range.get("groups", []))
@@ -1299,7 +1299,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 elif n_group == 1 and n_topics > 1:
                     axis_x = "Topic"
                     axis_legend = group_dim_label
-                    if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                    if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                         single_group_value = str(selected_years[0])
                     elif subgroups and len(subgroups) == 1:
                         single_group_value = str(subgroups[0])
@@ -1328,7 +1328,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                     axis_legend = [d for d in remaining if d != axis_x][0]
                     axis_facet = "Topic"
                 elif n_group == 1 and n_topics > 1:
-                    if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                    if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                         single_group_value = str(selected_years[0])
                     elif subgroups and len(subgroups) == 1:
                         single_group_value = str(subgroups[0])
@@ -1357,7 +1357,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             elif n_group == 1 and n_topics > 1:
                 axis_x = "Topic"
                 axis_legend = group_dim_label
-                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                     single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
@@ -1380,7 +1380,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             elif n_group == 1 and n_dist_ranges > 1:
                 axis_x = dist_range_dim_label
                 axis_legend = group_dim_label
-                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                     single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
@@ -1403,7 +1403,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
             elif n_group == 1 and n_total_correct > 1:
                 axis_x = "P-Fin 8 Score (# Correct)"
                 axis_legend = group_dim_label
-                if environment == "Over the Years" and selected_years and len(selected_years) == 1:
+                if environment == "Survey Years" and selected_years and len(selected_years) == 1:
                     single_group_value = str(selected_years[0])
                 elif subgroups and len(subgroups) == 1:
                     single_group_value = str(subgroups[0])
@@ -1519,7 +1519,7 @@ def run_analysis(config, df_years, df_genpop):
     chart_type = config["chart_type"]
 
     # Select dataset and apply filters
-    if environment == "Over the Years":
+    if environment == "Survey Years":
         df = df_years.copy()
         selected_years = config["selected_years"]
         if not selected_years:
@@ -1600,7 +1600,7 @@ def run_analysis(config, df_years, df_genpop):
     elif cat_order:
         available = [v for v in cat_order if v in df[group_col].unique()]
         category_orders["group_value"] = [str(v) for v in available]
-    if environment == "Over the Years":
+    if environment == "Survey Years":
         _yr_order = sorted(selected_years) if selected_years else sorted(df[group_col].unique())
         category_orders["group_value"] = [str(v) for v in _yr_order]
 
