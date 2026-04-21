@@ -1669,6 +1669,10 @@ def run_analysis(config, df_years, df_genpop):
 
     dist_range_dim_label = config.get("dist_range_dim_label", "Question Count Range")
 
+    # Build the Financial Well-Being response label (question text above "Response")
+    _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
+    _fw_response_label = f"{_fw_question}<br>Response" if _fw_question else "Response"
+
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
         if dim_name == "Topic":
@@ -1708,8 +1712,8 @@ def run_analysis(config, df_years, df_genpop):
             # Assign axes
             x_col = dim_to_col(axis_x)
             legend_col = dim_to_col(axis_legend)
-            x_dim_label = axis_x if axis_x == "Topic" else ("Response" if environment == "Financial Well-Being" else group_label)
-            legend_dim_label = axis_legend if axis_legend == "Topic" else ("Response" if environment == "Financial Well-Being" else group_label)
+            x_dim_label = axis_x if axis_x == "Topic" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
+            legend_dim_label = axis_legend if axis_legend == "Topic" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
@@ -1740,8 +1744,8 @@ def run_analysis(config, df_years, df_genpop):
                 x_col, legend_col = legend_col, x_col
                 axis_x, axis_legend = axis_legend, axis_x
 
-            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
-            legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else ("Response" if environment == "Financial Well-Being" else group_label))
+            x_dim_label = "Topic" if axis_x == "Topic" else ("Response Category" if axis_x == "Response Category" else (_fw_response_label if environment == "Financial Well-Being" else group_label))
+            legend_dim_label = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else (_fw_response_label if environment == "Financial Well-Being" else group_label))
 
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
@@ -1797,10 +1801,10 @@ def run_analysis(config, df_years, df_genpop):
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
         x_dim_label = dist_range_dim_label if axis_x == dist_range_dim_label else (
-            "Response" if environment == "Financial Well-Being" else group_label
+            _fw_response_label if environment == "Financial Well-Being" else group_label
         )
         legend_dim_label = dist_range_dim_label if axis_legend == dist_range_dim_label else (
-            "Response" if environment == "Financial Well-Being" else group_label
+            _fw_response_label if environment == "Financial Well-Being" else group_label
         )
 
         # For stacked/pie, range_label must be in legend (color)
@@ -1837,8 +1841,8 @@ def run_analysis(config, df_years, df_genpop):
         # Assign axes
         x_col = dim_to_col(axis_x)
         legend_col = dim_to_col(axis_legend)
-        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else ("Response" if environment == "Financial Well-Being" else group_label)
-        legend_dim_label = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else ("Response" if environment == "Financial Well-Being" else group_label)
+        x_dim_label = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
+        legend_dim_label = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else (_fw_response_label if environment == "Financial Well-Being" else group_label)
 
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
@@ -1859,7 +1863,7 @@ def run_analysis(config, df_years, df_genpop):
     # Set legend label
     legend_label_text = None
     if environment == "Financial Well-Being" and legend_col == "group_value":
-        legend_label_text = "Response"
+        legend_label_text = _fw_response_label
     elif legend_col == "response_category":
         legend_label_text = "Response Category"
     elif legend_col == "topic":
@@ -1893,17 +1897,6 @@ def run_analysis(config, df_years, df_genpop):
                            n_legend_groups=actual_n_legend_groups, pie_names_col=pie_names,
                            show_pct_labels=config.get("show_pct_labels", False))
 
-        # Add financial well-being question text as subtitle
-        if fig is not None and environment == "Financial Well-Being":
-            _fw_col = config.get("analysis_col")
-            _fw_question = FINANCIAL_WELLBEING_LABELS.get(_fw_col, "")
-            if _fw_question:
-                _cur_title = fig.layout.title.text or ""
-                fig.update_layout(
-                    title=dict(
-                        text=f"{_cur_title}<br><sup><span style='color:gray;font-size:11px'>{_fw_question}</span></sup>"
-                    )
-                )
 
     # Generate note
     note = generate_note(
