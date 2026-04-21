@@ -94,8 +94,8 @@ TOTAL_CORRECT_LABELS = {
 }
 
 BINARY_DISPLAY = {0: "No", 1: "Yes"}
-SAVINGS_DISPLAY = {1: "Yes", 2: "No", 3: "Not sure"}
-SAVINGS_ORDER = ["Yes", "No", "Not sure"]
+SAVINGS_DISPLAY = {1: "Yes", 2: "No", 3: "Not Sure"}
+SAVINGS_ORDER = ["Yes", "No", "Not Sure"]
 
 THINKING_TIME_ORDER = ["No hours", "1h", "2h", "3-4h", "5-9h", "10-19h", "20h+"]
 
