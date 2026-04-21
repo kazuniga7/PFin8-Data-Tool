@@ -2599,6 +2599,15 @@ def main():
         _grid_col, _leg_col = st.columns([6, 1])
 
         # Vertical legend in right column — matches Plotly's default right-side legend
+        _slice_label_map = {
+            "response_category": "Response Category",
+            "topic": "Topic",
+            "score_label": "P-Fin 8 Score (# Correct)",
+            "range_label": "Question Count Range",
+            "group_value": "Group",
+        }
+        _legend_title = _slice_label_map.get(_slice_col, _slice_col.replace("_", " ").title())
+
         with _leg_col:
             _lf = go.Figure()
             for _lbl, _lc in _cmap.items():
@@ -2612,6 +2621,7 @@ def main():
                 showlegend=True,
                 legend=dict(
                     orientation="v",
+                    title=dict(text=_legend_title, font=dict(color="black", size=12)),
                     font=dict(color="black", size=12),
                     xanchor="left", x=0,
                     yanchor="top", y=1,
