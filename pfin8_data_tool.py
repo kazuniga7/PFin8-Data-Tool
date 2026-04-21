@@ -1081,6 +1081,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         subgroups = None
         selected_years = None
         custom_age_range = None
+        age_mode = None
 
         if environment == "Survey Years":
             _sec4_title = "Choose years . . ."
