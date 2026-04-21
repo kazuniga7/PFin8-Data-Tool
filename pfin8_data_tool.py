@@ -1976,25 +1976,12 @@ def run_analysis(config, df_years, df_genpop):
                            show_pct_labels=config.get("show_pct_labels", False))
 
         # When facets are active and the FW question is on the x-axis (vertical charts only),
-        # show "Response" only on bottom-row subplots and add one shared question label below.
+        # show the full question as the x-axis title on bottom-row subplots only.
+        # Using a proper axis title (not a floating annotation) keeps it below the tick labels.
         if (fig is not None and use_facet and environment == "Financial Well-Being"
                 and x_label == _fw_x_label and _fw_question and not _is_horiz):
-            import math as _math
-            _n_facets = chart_data[use_facet].nunique()
-            _n_rows = _math.ceil(_n_facets / 4)
-            _time_fw_vars = {"time_thinking_finances", "worktime_thinking_finances"}
-            _fw_short_label = "Number of Hours" if config.get("analysis_col") in _time_fw_vars else "Response"
             fig.update_xaxes(title_text="")
-            fig.update_xaxes(title_text=_fw_short_label, row=1)
-            fig.add_annotation(
-                text=_fw_question,
-                xref="paper", yref="paper",
-                x=0.5, y=-0.12,
-                showarrow=False,
-                font=dict(size=12, color="black"),
-                xanchor="center",
-            )
-            fig.update_layout(margin=dict(b=100))
+            fig.update_xaxes(title_text=_fw_axis_label, row=1)
 
     # Generate note
     note = generate_note(
