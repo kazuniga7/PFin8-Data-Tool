@@ -1261,7 +1261,7 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
                 else:
                     available_values = sorted(available_values, key=str)
                 subgroups = st.multiselect(
-                    f"Select Groups",
+                    f"Select Response Categories",
                     available_values,
                     default=available_values,
                 )
