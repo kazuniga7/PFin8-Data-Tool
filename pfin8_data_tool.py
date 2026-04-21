@@ -718,11 +718,11 @@ def generate_note(environment, analysis_type, view_mode, selected_topics, select
         parts.append(f"**View:** {mode_text}")
     elif analysis_type == "Response Distribution":
         parts.append(f"**Response Type:** {dist_response_cat or 'N/A'}")
-        if dist_range_mode == "Buckets":
-            _range_text = ", ".join(dist_buckets) if dist_buckets else "All Buckets"
+        if dist_range_mode == "Predefined":
+            _range_text = ", ".join(dist_buckets) if dist_buckets else "All Predefined"
         else:
             _labels = dist_custom_ranges.get("labels", []) if dist_custom_ranges else []
-            _range_text = ", ".join(_labels) if _labels else "Custom Ranges"
+            _range_text = ", ".join(_labels) if _labels else "Custom"
         parts.append(f"**Ranges:** {_range_text}")
     else:
         range_text = ", ".join(TOTAL_CORRECT_LABELS[i] for i in sorted(selected_range)) if selected_range else "0–8"
@@ -834,10 +834,10 @@ def get_category_order(col_name):
 
 def dist_ranges_covers_all(range_mode, buckets, custom_ranges):
     """Returns True if the selected ranges cover 0–8 completely with no gaps."""
-    if range_mode == "Buckets":
+    if range_mode == "Predefined":
         _all = {"0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"}
         return buckets is not None and set(buckets) == _all
-    elif range_mode == "Custom Ranges" and custom_ranges:
+    elif range_mode == "Custom" and custom_ranges:
         if custom_ranges.get("errors"):
             return False
         groups = sorted(custom_ranges["groups"], key=lambda x: x[0])
@@ -932,17 +932,17 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         with st.expander(_sec2_title, expanded=True):
             if analysis_type == "Response Distribution":
                 dist_response_cat = st.selectbox(
-                    "Response Type",
+                    "Response Category",
                     ["Correct", "Incorrect", "Don't Know"],
                 )
                 dist_range_mode = st.selectbox(
-                    "Distribution Ranges",
-                    ["Buckets", "Custom Ranges"],
+                    "Set Question Ranges . . .",
+                    ["Predefined", "Custom"],
                 )
                 _dist_bucket_options = ["0-2 (<26%)", "3-4 (26%-50%)", "5-6 (51%-75%)", "7-8 (76%-100%)"]
                 dist_buckets = None
                 dist_custom_ranges = None
-                if dist_range_mode == "Buckets":
+                if dist_range_mode == "Predefined":
                     dist_buckets = st.multiselect(
                         "Select Number of Questions Ranges",
                         _dist_bucket_options,
@@ -1254,9 +1254,9 @@ section[data-testid="stSidebar"]:hover *::-webkit-scrollbar-thumb {
         dist_range_dim_label = "Distribution Range"
         n_dist_ranges = 1
         if analysis_type == "Response Distribution":
-            if dist_range_mode == "Buckets" and dist_buckets:
+            if dist_range_mode == "Predefined" and dist_buckets:
                 n_dist_ranges = len(dist_buckets)
-            elif dist_range_mode == "Custom Ranges" and dist_custom_ranges and not dist_custom_ranges.get("errors"):
+            elif dist_range_mode == "Custom" and dist_custom_ranges and not dist_custom_ranges.get("errors"):
                 n_dist_ranges = len(dist_custom_ranges["groups"])
             else:
                 n_dist_ranges = 1
@@ -1724,7 +1724,7 @@ def run_analysis(config, df_years, df_genpop):
             _ordered_buckets = [b for b in _bucket_map if b in dist_buckets_val]
             ranges = [_bucket_map[b] for b in _ordered_buckets]
             range_labels = list(_ordered_buckets)
-        else:  # Custom Ranges
+        else:  # Custom
             if not dist_custom_ranges_val or dist_custom_ranges_val.get("errors"):
                 return None, None, None, None, None
             ranges = dist_custom_ranges_val["groups"]
