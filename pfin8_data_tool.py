@@ -2576,7 +2576,7 @@ def main():
             _ey_top = 1.0 - _ri * (_erh + _ev)
             _exp_fig.add_annotation(
                 text=str(_fv), xref="paper", yref="paper",
-                x=-0.01, y=_ey_top - _erh / 2, showarrow=False,
+                x=-0.005, y=_ey_top - _erh / 2, showarrow=False,
                 font=dict(size=10, color="black"),
                 xanchor="center", yanchor="middle", textangle=-90,
             )
@@ -2600,7 +2600,7 @@ def main():
                 title=dict(text=_legend_title, font=dict(color="black")),
                 itemclick=False,
                 itemdoubleclick=False,
-                x=1.02,
+                x=1.01,
                 xanchor="left",
                 y=1,
                 yanchor="top",
