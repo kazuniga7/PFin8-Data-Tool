@@ -1685,6 +1685,7 @@ def run_analysis(config, df_years, df_genpop):
         return "<br>".join(lines)
     _fw_question = FINANCIAL_WELLBEING_LABELS.get(config.get("analysis_col"), "")
     _fw_response_label = _wrap(_fw_question, width=42) if _fw_question else "Response"
+    _fw_title_label = _fw_question if _fw_question else "Response"
 
     # Map dimension names to data columns
     def dim_to_col(dim_name, mode="binary"):
@@ -1731,7 +1732,9 @@ def run_analysis(config, df_years, df_genpop):
             chart_data["x"] = chart_data[x_col]
             color_col = legend_col
             x_label = x_dim_label
-            title = f"P-Fin 8: {_metric_label} — {single_group_value}" if single_group_value else f"P-Fin 8: {_metric_label} — {x_dim_label} × {legend_dim_label}"
+            _xt = axis_x if axis_x == "Topic" else (_fw_title_label if environment == "Financial Well-Being" else group_label)
+            _lt = axis_legend if axis_legend == "Topic" else (_fw_title_label if environment == "Financial Well-Being" else group_label)
+            title = f"P-Fin 8: {_metric_label} — {single_group_value}" if single_group_value else f"P-Fin 8: {_metric_label} — {_xt} × {_lt}"
 
         else:
             topics_map = {k: v for k, v in TOPIC_CAT3_NAMES.items() if k in selected_topics}
@@ -1768,7 +1771,8 @@ def run_analysis(config, df_years, df_genpop):
             else:
                 use_facet = None
             x_label = x_dim_label
-            title = f"P-Fin 8: Response Distribution — {single_group_value}" if single_group_value else f"P-Fin 8: Response Distribution by {group_label}"
+            _lt2 = "Topic" if axis_legend == "Topic" else ("Response Category" if axis_legend == "Response Category" else (_fw_title_label if environment == "Financial Well-Being" else group_label))
+            title = f"P-Fin 8: Response Distribution — {single_group_value}" if single_group_value else f"P-Fin 8: Response Distribution by {_lt2}"
 
             # Set category orders for response_category if used
             if "response_category" in [x_col, legend_col, facet_col]:
@@ -1860,7 +1864,9 @@ def run_analysis(config, df_years, df_genpop):
         chart_data["x"] = chart_data[x_col]
         color_col = legend_col
         x_label = x_dim_label
-        title = f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {x_dim_label} × {legend_dim_label}"
+        _xt3 = "P-Fin 8 Score (# Correct)" if axis_x == "P-Fin 8 Score (# Correct)" else (_fw_title_label if environment == "Financial Well-Being" else group_label)
+        _lt3 = "P-Fin 8 Score (# Correct)" if axis_legend == "P-Fin 8 Score (# Correct)" else (_fw_title_label if environment == "Financial Well-Being" else group_label)
+        title = f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {single_group_value}" if single_group_value else f"P-Fin 8: Distribution of P-Fin 8 Score (# Correct) — {_xt3} × {_lt3}"
 
         # Ensure score order
         if not chart_data.empty:
