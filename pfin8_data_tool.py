@@ -2404,7 +2404,7 @@ def main():
             import streamlit.components.v1 as components, re as _re_tbl_note
             if note:
                 _tbl_note_plain = _re_tbl_note.sub(r'\*\*(.+?)\*\*', r'\1', note)
-                _tbl_note_html = '<p style="font-size:11px;color:gray;margin-top:10px;">' + _tbl_note_plain + '</p>'
+                _tbl_note_html = '<p style="font-size:11px;color:gray;margin-top:10px;text-align:left;">' + _tbl_note_plain + '</p>'
             else:
                 _tbl_note_html = ""
             component_html = (
@@ -2590,7 +2590,7 @@ def main():
                 text="<br>".join(_note_lines4), xref="paper", yref="paper",
                 x=0, y=-0.03, showarrow=False,
                 font=dict(size=10, color="gray"),
-                xanchor="left", yanchor="top",
+                xanchor="left", yanchor="top", align="left",
             )
             _exp_fig.update_layout(margin=dict(b=16 * len(_note_lines4) + 40))
 
@@ -2760,6 +2760,7 @@ def main():
                     text="<br>".join(_note_lines5), xref="paper", yref="paper",
                     x=0, y=-0.15, showarrow=False,
                     font=dict(size=10, color="gray"),
+                    align="left",
                     xanchor="left", yanchor="top",
                 )
                 _cur_b = _efig.layout.margin.b or 50
