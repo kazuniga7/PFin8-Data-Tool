@@ -2560,7 +2560,7 @@ def main():
             _ey_top = 1.0 - _ri * (_erh + _ev)
             _exp_fig.add_annotation(
                 text=str(_fv), xref="paper", yref="paper",
-                x=-0.005, y=_ey_top - _erh / 2, showarrow=False,
+                x=-0.03, y=_ey_top - _erh / 2, showarrow=False,
                 font=dict(size=10, color="black"),
                 xanchor="center", yanchor="middle", textangle=-90,
             )
@@ -2577,7 +2577,7 @@ def main():
             yanchor="bottom",
         )
         _exp_fig.update_layout(
-            margin=dict(l=50, t=160, r=200, b=20),
+            margin=dict(l=70, t=160, r=200, b=20),
             height=_exp_h,
             width=_exp_w,
             legend=dict(
